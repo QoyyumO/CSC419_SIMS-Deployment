@@ -20,7 +20,7 @@ LEAD SOFTWARE DEVELOPER (@AbdurRahmanSalami)
 - Key Commits:
 - Notes: 
 
-SOFTWARE DEVELOPER 1 (@-)
+SOFTWARE DEVELOPER 1 (@Inaolajibasit)
 - PRs: 
 - Key Commits:
 - Notes: 
@@ -30,7 +30,12 @@ SOFTWARE DEVELOPER 2 (@dejodammy)
 - Key Commits:
 - Notes: 
 
-LEAD UX DESIGNER (@-)
+SOFTWARE DEVELOPER 3 (@nwoyekamsi)
+- PRs: 
+- Key Commits:
+- Notes: 
+
+LEAD UX DESIGNER (@Chibundum2005)
 - PRs: 
 - Key Commits:
 - Notes: 

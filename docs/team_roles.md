@@ -48,7 +48,7 @@
 
 ### Software Developer 1
 - **Name:** Inaolaji Basit
-- **GitHub:** @dev1  
+- **GitHub:** @Inaolajibasit  
 - **Responsibilities:**  
   - Implement assigned features according to specifications.  
   - Write tests and fix bugs as assigned.  
@@ -62,11 +62,18 @@
   - Maintain documentation of code changes.  
   - Participate in PR reviews and testing support.
 
+### Software Developer 3
+- **Name:** Nwoye Kamsi
+- **GitHub:** @nwoyekamsi  
+- **Responsibilities:**  
+  - Assist in feature implementation and bug fixes.  
+  - Update and refine technical documentation for assigned tasks.
+  - Collaborate closely with other developers to complete sprint tasks.
 ---
 
 ## Lead UX Designer
 - **Name:** Umeh Chibundum
-- **GitHub:** @ux-lead  
+- **GitHub:** @Chibundum2005  
 - **Responsibilities:**  
   - Create wireframes, mockups, and design guidelines.  
   - Ensure UX consistency across pages and components.  
