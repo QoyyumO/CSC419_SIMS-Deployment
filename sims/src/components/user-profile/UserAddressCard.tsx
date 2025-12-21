@@ -63,7 +63,7 @@ export default function UserAddressCard() {
 
           <button
             onClick={openModal}
-            className="shadow-theme-xs flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 lg:inline-flex lg:w-auto dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+            className="shadow-theme-xs flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 lg:inline-flex lg:w-auto dark:border-gray-700 dark:bg-[#2e3a6e] dark:text-gray-400 dark:hover:bg-[#3d4a7d] dark:hover:text-gray-200"
           >
             <svg
               className="fill-current"
@@ -85,7 +85,7 @@ export default function UserAddressCard() {
         </div>
       </div>
       <Modal isOpen={isOpen} onClose={closeModal} className="m-4 max-w-[700px]">
-        <div className="no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-4 lg:p-11 dark:bg-gray-900">
+        <div className="no-scrollbar relative w-full overflow-y-auto rounded-3xl bg-white p-4 lg:p-11 dark:bg-[#2e3a6e]">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
               Edit Address
