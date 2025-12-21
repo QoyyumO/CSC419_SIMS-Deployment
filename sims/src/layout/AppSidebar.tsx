@@ -27,19 +27,19 @@ const navItems: NavItem[] = [
     path: '/',
   },
   {
-    icon: <PencilIcon />,
-    name: 'Assessments',
-    path: '/assessments',
+    icon: <GroupIcon />,
+    name: 'Schools',
+    path: '/school',
   },
   {
-    icon: <GroupIcon />,
-    name: 'Candidates',
-    path: '/candidates',
+    icon: <PencilIcon />,
+    name: 'Grades',
+    path: '/grades',
   },
   {
     icon: <PieChartIcon />,
-    name: 'Skills',
-    path: '/skills',
+    name: 'Departments',
+    path: '/departments',
   },
 ];
 
@@ -266,7 +266,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out lg:mt-0 dark:border-gray-800 dark:bg-gray-900 ${
+      className={`fixed top-0 left-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out lg:mt-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white ${
         isExpanded || isMobileOpen
           ? 'w-[290px]'
           : isHovered
@@ -292,7 +292,7 @@ const AppSidebar: React.FC = () => {
                   height={48}
                 />
                 <h1 className="text-2xl font-medium text-gray-700">
-                  Skilladder
+                  SIMS
                 </h1>
               </div>
               <div className="hidden items-center gap-1 dark:flex">
@@ -302,7 +302,7 @@ const AppSidebar: React.FC = () => {
                   width={48}
                   height={48}
                 />
-                <h1 className="text-2xl font-medium text-white">Skilladder</h1>
+                <h1 className="text-2xl font-medium text-white">SIMS</h1>
               </div>
             </>
           ) : (
@@ -320,7 +320,7 @@ const AppSidebar: React.FC = () => {
           <div className="flex flex-col gap-4">
             <div>
               <h2
-                className={`mb-4 flex text-xs leading-[20px] text-gray-400 uppercase ${
+                className={`mb-4 flex text-xs leading-[20px] text-gray-400 uppercase dark:text-gray-400 ${
                   !isExpanded && !isHovered
                     ? 'lg:justify-center'
                     : 'justify-start'

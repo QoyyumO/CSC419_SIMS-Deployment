@@ -68,23 +68,23 @@ export function validateRoles(roles: string[]): roles is UserRole[] {
 }
 
 /**
- * Validates username uniqueness
+ * Validates email uniqueness
  */
-export async function validateUsernameUniqueness(
+export async function validateEmailUniqueness(
   db: DatabaseReader,
-  username: string,
+  email: string,
   excludeId?: Id<"users">
 ): Promise<void> {
   const existing = await db
     .query("users")
-    .withIndex("by_username", (q) => q.eq("username", username))
+    .withIndex("by_email", (q) => q.eq("email", email))
     .first();
 
   if (existing && existing._id !== excludeId) {
     throw new InvariantViolationError(
       "UserAggregate",
-      "Username Uniqueness",
-      `Username '${username}' is already taken`
+      "Email Uniqueness",
+      `Email '${email}' is already taken`
     );
   }
 }
@@ -129,12 +129,12 @@ export async function validateRoleConsistency(
  */
 export async function validateCreateUser(
   db: DatabaseReader,
-  username: string,
+  email: string,
   hashedPassword: string,
   roles: string[],
   profile: { firstName?: string; lastName?: string; middleName?: string }
 ): Promise<void> {
-  await validateUsernameUniqueness(db, username);
+  await validateEmailUniqueness(db, email);
   validatePasswordIsHashed(hashedPassword);
   validateRoles(roles);
   validateProfile(profile);
@@ -149,7 +149,7 @@ export async function validateCreateUser(
 export async function validateUpdateUser(
   db: DatabaseReader,
   userId: Id<"users">,
-  username?: string,
+  email?: string,
   hashedPassword?: string,
   roles?: string[],
   profile?: { firstName?: string; lastName?: string; middleName?: string }
@@ -159,8 +159,8 @@ export async function validateUpdateUser(
     throw new NotFoundError("User", userId);
   }
 
-  if (username && username !== user.username) {
-    await validateUsernameUniqueness(db, username, userId);
+  if (email && email !== user.email) {
+    await validateEmailUniqueness(db, email, userId);
   }
 
   if (hashedPassword) {

@@ -166,7 +166,7 @@ export interface FullName {
 
 export interface User {
   _id: Id<"users">;
-  username: string;
+  email: string;
   hashedPassword: string;
   roles: UserRole[];
   profile: FullName;

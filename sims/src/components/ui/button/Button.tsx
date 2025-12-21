@@ -33,19 +33,19 @@ const Button: React.FC<ButtonProps> = ({
   // Variant Classes
   const variantClasses = {
     primary:
-      'bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300',
+      'bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 hover:shadow-md hover:scale-[1.02] focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:bg-brand-300 disabled:hover:scale-100 disabled:hover:shadow-theme-xs',
     outline:
-      'bg-white text-gray-500 border-2 border-gray-300 hover:border-brand-500 hover:text-brand-500 focus:border-brand-600 focus:text-brand-600 border-solid ring-0 shadow-none transition-colors duration-150 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:border-brand-500 dark:hover:text-brand-500',
+      'bg-white text-gray-500 border-2 border-gray-300 hover:border-brand-500 hover:text-brand-500 hover:bg-brand-50 hover:shadow-sm hover:scale-[1.02] focus:border-brand-600 focus:text-brand-600 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 border-solid ring-0 shadow-none transition-all duration-150 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:border-brand-500 dark:hover:text-brand-500 dark:hover:bg-brand-900/20 disabled:hover:scale-100 disabled:hover:shadow-none',
     'text-only':
-      'bg-transparent text-gray-400 hover:bg-brand-50 hover:text-brand-500 focus:bg-brand-100 disabled:text-brand-300 ring-0 border-0 shadow-none', // text-only style
+      'bg-transparent text-gray-400 hover:bg-brand-50 hover:text-brand-500 hover:scale-[1.02] focus:bg-brand-100 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:text-brand-300 disabled:hover:scale-100 ring-0 border-0 shadow-none transition-all duration-150', // text-only style
   };
 
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-medium transition ${className} ${
+      className={`inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-in-out ${className} ${
         sizeClasses[size]
       } ${variantClasses[variant]} ${
-        disabled ? 'cursor-not-allowed opacity-50' : ''
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       } rounded-[65px]`}
       onClick={onClick}
       disabled={disabled}
