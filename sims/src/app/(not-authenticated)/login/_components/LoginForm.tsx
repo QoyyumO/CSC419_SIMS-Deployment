@@ -10,8 +10,6 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import Alert from "@/components/ui/alert/Alert";
 import { EyeCloseIcon, EyeIcon } from '@/icons';
-import { getDefaultRoute } from "@/utils/getDefaultRoute";
-import { UserRole } from "../../../../../convex/lib/aggregates/types";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -82,11 +80,11 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
         let redirectPath = redirectTo;
 
         if (!redirectPath && result.user?.roles) {
-          redirectPath = getDefaultRoute(result.user.roles as UserRole[]);
+          redirectPath = "/";
         }
 
         if (!redirectPath) {
-          redirectPath = "/account-settings";
+          redirectPath = "/";
         }
 
         if (onSuccess) {

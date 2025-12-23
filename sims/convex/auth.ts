@@ -8,8 +8,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { NotFoundError, ValidationError } from "./lib/errors";
-import { validateCreateUser } from "./lib/aggregates";
-import { UserRole } from "./lib/aggregates/types";
 import {
   createSession,
   validateSessionToken,
@@ -99,71 +97,6 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
   
   return derivedHashHex === hashHex;
 }
-
-/**
- * Register a new user
- * 
- * Creates a new user account with hashed password and profile information.
- * Validates all user invariants before creation.
- */
-export const register = mutation({
-  args: {
-    email: v.string(),
-    password: v.string(),
-    roles: v.array(v.string()),
-    profile: v.object({
-      firstName: v.string(),
-      middleName: v.optional(v.string()),
-      lastName: v.string(),
-    }),
-  },
-  handler: async (ctx, args) => {
-    // Check if email already exists
-    const existingUser = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
-      .first();
-
-    if (existingUser) {
-      throw new ValidationError(
-        "email",
-        "Email already exists"
-      );
-    }
-
-    // Hash the password
-    const hashedPassword = await hashPassword(args.password);
-
-    // Validate user creation invariants
-    await validateCreateUser(
-      ctx.db,
-      args.email,
-      hashedPassword,
-      args.roles,
-      args.profile
-    );
-
-    // Create the user
-    const userId = await ctx.db.insert("users", {
-      email: args.email,
-      hashedPassword,
-      roles: args.roles as UserRole[],
-      profile: args.profile,
-    });
-
-    // Create a session for the newly registered user
-    const token = await createSession(ctx.db, userId);
-
-    return {
-      success: true,
-      userId,
-      email: args.email,
-      token,
-      roles: args.roles as UserRole[],
-      profile: args.profile,
-    };
-  },
-});
 
 /**
  * Login with email and password

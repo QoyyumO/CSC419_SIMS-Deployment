@@ -1,6 +1,6 @@
 'use client';
 
-import type React from 'react';
+import React from 'react';
 import { createContext, useState, useContext, useEffect } from 'react';
 
 type Theme = 'light' | 'dark';
@@ -32,15 +32,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     return 'light';
   });
-  const [isInitialized, setIsInitialized] = useState(false);
-
+  // Track initialization with a ref instead of state to avoid setState in effect
+  const isInitializedRef = React.useRef(false);
+  
   useEffect(() => {
     // Mark as initialized after mount
-    setIsInitialized(true);
+    isInitializedRef.current = true;
   }, []);
 
   useEffect(() => {
-    if (isInitialized) {
+    if (isInitializedRef.current) {
       localStorage.setItem('theme', theme);
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -48,7 +49,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
         document.documentElement.classList.remove('dark');
       }
     }
-  }, [theme, isInitialized]);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));

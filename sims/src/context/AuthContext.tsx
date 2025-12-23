@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -33,16 +33,6 @@ interface AuthContextType {
   // Authentication methods
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => Promise<void>;
-  register: (data: {
-    email: string;
-    password: string;
-    roles: string[];
-    profile: {
-      firstName: string;
-      middleName?: string;
-      lastName: string;
-    };
-  }) => Promise<{ success: boolean; error?: string }>;
   
   // Role checking
   hasRole: (role: UserRole) => boolean;
@@ -57,65 +47,72 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  // Initialize with null to ensure server and client render the same initially
+  // We'll read from localStorage after mount to prevent hydration mismatch
   const [storedToken, setStoredToken] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get stored session token from localStorage
+  // Read from localStorage after mount to prevent hydration mismatch
+  // This is necessary to sync with external system (localStorage) and prevent hydration errors
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("sims_session_token");
-      if (token) {
-        setStoredToken(token);
-      }
+      setStoredToken(token);
+      setIsInitialized(true);
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Query current user with stored session token
   const currentUser = useQuery(
     api.auth.getCurrentUser,
     storedToken ? { token: storedToken } : "skip"
   );
-  
-  // If there is no stored token, we know the user is unauthenticated.
-  // Ensure state reflects that (avoid staying stuck in loading).
-  useEffect(() => {
-    if (storedToken === null) {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, [storedToken]);
 
   // Mutations
   const loginMutation = useMutation(api.auth.login);
-  const registerMutation = useMutation(api.auth.register);
   const logoutMutation = useMutation(api.auth.logout);
 
-  // Update authentication state when user data changes
-  useEffect(() => {
+  // Derive authentication state directly from query result
+  const { isAuthenticated, user } = useMemo(() => {
+    if (storedToken === null) {
+      return { isAuthenticated: false, user: null as User | null };
+    }
     if (currentUser === undefined) {
       // Still loading
-      return;
+      return { isAuthenticated: false, user: null as User | null };
     }
-
     if (currentUser === null) {
       // Not authenticated - token invalid or expired
-      setIsAuthenticated(false);
-      setUser(null);
-      // Clear any stored session
+      return { isAuthenticated: false, user: null as User | null };
+    }
+    // Authenticated
+    return {
+      isAuthenticated: true,
+      user: {
+        ...currentUser,
+        roles: currentUser.roles as UserRole[],
+      } as User,
+    };
+  }, [currentUser, storedToken]);
+
+  // Track if token should be cleared (when currentUser becomes null)
+  const shouldClearToken = storedToken !== null && currentUser === null;
+  
+  // Clear localStorage and token state when token becomes invalid
+  // This is a legitimate case of syncing with external system (query result)
+  // We need to clear the token when the query indicates it's invalid
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (shouldClearToken) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("sims_session_token");
       }
       setStoredToken(null);
-    } else {
-      // Authenticated
-      setIsAuthenticated(true);
-      setUser({
-        ...currentUser,
-        roles: currentUser.roles as UserRole[],
-      });
     }
-  }, [currentUser]);
+  }, [shouldClearToken]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Login function
   const login = useCallback(async (
@@ -132,7 +129,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         setStoredToken(result.token);
         
-        // Update auth state immediately with returned user to avoid waiting for the follow-up query
+        // State will be updated automatically via the query
         if (result.userId && result.email) {
           const userObj: User = {
             _id: result.userId,
@@ -140,8 +137,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             roles: (result.roles ?? []) as UserRole[],
             profile: result.profile ?? { firstName: "", lastName: "" },
           };
-          setIsAuthenticated(true);
-          setUser(userObj);
           return { success: true, user: userObj };
         }
 
@@ -174,55 +169,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.removeItem("sims_session_token");
       }
       setStoredToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
+      // State will be updated automatically via the query
     } catch (error) {
       console.error("Error during logout:", error);
     }
   }, [storedToken, logoutMutation]);
-
-  // Register function
-  const register = useCallback(async (data: {
-    email: string;
-    password: string;
-    roles: string[];
-    profile: {
-      firstName: string;
-      middleName?: string;
-      lastName: string;
-    };
-  }): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const result = await registerMutation(data);
-      
-      if (result.success && result.token) {
-        // Store session token from registration
-        if (typeof window !== "undefined") {
-          localStorage.setItem("sims_session_token", result.token);
-        }
-        setStoredToken(result.token);
-        
-        // Update auth state immediately with returned user
-        if (result.userId && result.email) {
-          const userObj: User = {
-            _id: result.userId,
-            email: result.email,
-            roles: (result.roles ?? []) as UserRole[],
-            profile: result.profile ?? { firstName: "", lastName: "" },
-          };
-          setIsAuthenticated(true);
-          setUser(userObj);
-        }
-        
-        return { success: true };
-      }
-      
-      return { success: false, error: "Registration failed" };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred during registration";
-      return { success: false, error: errorMessage };
-    }
-  }, [registerMutation]);
 
   // Role checking functions
   const hasRole = useCallback((role: UserRole): boolean => {
@@ -239,8 +190,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return roles.every(role => user.roles.includes(role));
   }, [user]);
 
-  // Consider ourselves not loading if we didn't query (no stored token).
-  const isLoading = storedToken === null ? false : currentUser === undefined;
+  // Consider ourselves loading if:
+  // 1. Not yet initialized (haven't read from localStorage)
+  // 2. Have a token but query is still loading
+  const isLoading = !isInitialized || (storedToken !== null && currentUser === undefined);
 
   const value: AuthContextType = {
     isAuthenticated,
@@ -248,7 +201,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     login,
     logout,
-    register,
     hasRole,
     hasAnyRole,
     hasAllRoles,

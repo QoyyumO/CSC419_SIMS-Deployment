@@ -1,9 +1,11 @@
 'use client';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from '../context/SidebarContext';
+import { useAuth } from '../hooks/useAuth';
+import { isAdmin } from '../services/permissions.service';
 import {
   PencilIcon,
   ChevronDownIcon,
@@ -11,6 +13,7 @@ import {
   HorizontaLDots,
   GroupIcon,
   PieChartIcon,
+  UserIcon,
 } from '../icons';
 
 type NavItem = {
@@ -20,32 +23,45 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: 'Dashboard',
-    path: '/',
-  },
-  {
-    icon: <GroupIcon />,
-    name: 'Schools',
-    path: '/school',
-  },
-  {
-    icon: <PencilIcon />,
-    name: 'Grades',
-    path: '/grades',
-  },
-  {
-    icon: <PieChartIcon />,
-    name: 'Departments',
-    path: '/departments',
-  },
-];
-
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const { user } = useAuth();
+  const roles = user?.roles || [];
+  const userIsAdmin = isAdmin(roles);
+
+  const navItems: NavItem[] = useMemo(() => [
+    {
+      icon: <GridIcon />,
+      name: 'Dashboard',
+      path: '/',
+    },
+    {
+      icon: <PencilIcon />,
+      name: 'Grades',
+      path: '/grades',
+    },
+    // Only show admin links for admins
+    ...(userIsAdmin
+      ? [
+          {
+            icon: <GroupIcon />,
+            name: 'Schools',
+            path: '/schools',
+          },
+          {
+            icon: <PieChartIcon />,
+            name: 'Departments',
+            path: '/departments',
+          },
+          {
+            icon: <UserIcon />,
+            name: 'Users',
+            path: '/users',
+          },
+        ]
+      : []),
+  ], [userIsAdmin]);
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -236,7 +252,7 @@ const AppSidebar: React.FC = () => {
     };
 
     queueMicrotask(updateSubmenu);
-  }, [pathname, isActive]);
+  }, [pathname, isActive, navItems]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened

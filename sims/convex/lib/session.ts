@@ -65,7 +65,7 @@ export async function validateSessionToken(
   // Find session by token
   const session = await db
     .query("sessions")
-    .withIndex("by_token", (q: any) => q.eq("token", token))
+    .withIndex("by_token", (q) => q.eq("token", token))
     .first();
 
   if (!session) {
@@ -94,7 +94,7 @@ export async function deleteSessionByToken(
 ): Promise<void> {
   const session = await db
     .query("sessions")
-    .withIndex("by_token", (q: any) => q.eq("token", token))
+    .withIndex("by_token", (q) => q.eq("token", token))
     .first();
 
   if (session) {
@@ -115,7 +115,7 @@ export async function deleteAllUserSessions(
 ): Promise<void> {
   const sessions = await db
     .query("sessions")
-    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+    .withIndex("by_userId", (q) => q.eq("userId", userId))
     .collect();
 
   for (const session of sessions) {
@@ -135,7 +135,7 @@ export async function cleanupExpiredSessions(
   const now = Date.now();
   const expiredSessions = await db
     .query("sessions")
-    .withIndex("by_expiresAt", (q: any) => q.lt("expiresAt", now))
+    .withIndex("by_expiresAt", (q) => q.lt("expiresAt", now))
     .collect();
 
   let deleted = 0;

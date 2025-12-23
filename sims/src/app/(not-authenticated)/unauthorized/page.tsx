@@ -18,7 +18,7 @@ export default function UnauthorizedPage() {
           Access Denied
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md">
-          You don't have permission to access this resource.
+          You don&apos;t have permission to access this resource.
           {user && (
             <span className="block mt-2">
               Your current role(s): {user.roles.join(", ")}

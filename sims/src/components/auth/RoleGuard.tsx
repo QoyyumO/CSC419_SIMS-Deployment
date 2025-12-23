@@ -6,10 +6,9 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
-import { useHasRole, useHasAnyRole, useHasAllRoles } from "../../hooks/useHasRole";
 import { UserRole } from "../../../convex/lib/aggregates/types";
 import Loading from "../loading/Loading";
 
@@ -32,17 +31,20 @@ export function RoleGuard({
   fallback,
   unauthorizedMessage,
 }: RoleGuardProps) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, hasRole, hasAnyRole, hasAllRoles } = useAuth();
   const router = useRouter();
 
-  const hasSingleRole = role ? useHasRole(role) : false;
-  const hasMultipleRoles = roles
-    ? requireAll
-      ? useHasAllRoles(roles)
-      : useHasAnyRole(roles)
-    : false;
-
-  const hasAccess = hasSingleRole || hasMultipleRoles;
+  // Compute access without conditional hook calls
+  const hasAccess = useMemo(() => {
+    if (role) {
+      return hasRole(role);
+    }
+    if (roles) {
+      return requireAll ? hasAllRoles(roles) : hasAnyRole(roles);
+    }
+    // If neither role nor roles provided, deny access
+    return false;
+  }, [role, roles, requireAll, hasRole, hasAnyRole, hasAllRoles]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && !hasAccess) {

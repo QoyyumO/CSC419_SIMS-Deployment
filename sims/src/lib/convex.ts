@@ -29,5 +29,4 @@ export { api };
 
 // Export types for use in components
 export type { Id } from "../../convex/_generated/dataModel";
-export type { FunctionReference } from "../../convex/_generated/server";
 

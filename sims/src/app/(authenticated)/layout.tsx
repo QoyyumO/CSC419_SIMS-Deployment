@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 import { useSidebar } from '@/context/SidebarContext';
@@ -22,9 +22,17 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { setUser } = useUserStore();
   const { user: authUser, isAuthenticated, isLoading } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track mount state to prevent hydration mismatch
+  // This is necessary to ensure server and client render the same initially
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isLoading || !isMounted) {
       return;
     }
 
@@ -39,9 +47,11 @@ export default function AdminLayout({
     if (user) {
       setUser(user);
     }
-  }, [pathname, setUser, router, authUser, isAuthenticated, isLoading]);
+  }, [pathname, setUser, router, authUser, isAuthenticated, isLoading, isMounted]);
 
-  if (isLoading) {
+  // Show loading during initial mount or while loading auth state
+  // This ensures server and client render the same initially
+  if (!isMounted || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loading />

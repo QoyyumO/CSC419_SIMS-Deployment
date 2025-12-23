@@ -140,6 +140,7 @@ export default defineSchema({
       middleName: v.optional(v.string()),
       lastName: v.string(),
     }),
+    active: v.optional(v.boolean()),
   })
     .index("by_email", ["email"]),
 
