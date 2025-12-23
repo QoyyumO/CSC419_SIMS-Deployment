@@ -101,6 +101,96 @@ export const getUserByEmail = query({
 });
 
 /**
+ * Get user profile with student-specific data if user is a student
+ * Returns program, enrollment status, and current term/year information
+ */
+export const getProfile = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+
+    if (!user) {
+      throw new NotFoundError("User", args.userId);
+    }
+
+    const baseProfile = {
+      _id: user._id,
+      email: user.email,
+      roles: user.roles,
+      profile: user.profile,
+      active: user.active ?? true,
+    };
+
+    // If user is a student, fetch student-specific data
+    if (user.roles.includes("student")) {
+      const student = await ctx.db
+        .query("students")
+        .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+        .first();
+
+      if (student) {
+        // Get department information
+        const department = await ctx.db.get(student.departmentId);
+        
+        // Get school information for the department
+        let school = null;
+        if (department) {
+          school = await ctx.db.get(department.schoolId);
+        }
+        
+        // Get current term (term that includes today's date)
+        const now = Date.now();
+        const currentTerm = await ctx.db
+          .query("terms")
+          .filter((q) => 
+            q.and(
+              q.lte(q.field("startDate"), now),
+              q.gte(q.field("endDate"), now)
+            )
+          )
+          .first();
+
+        // Get academic session for current term
+        let currentSession = null;
+        if (currentTerm) {
+          currentSession = await ctx.db.get(currentTerm.sessionId);
+        }
+
+        return {
+          ...baseProfile,
+          student: {
+            studentNumber: student.studentNumber,
+            admissionYear: student.admissionYear,
+            level: student.level,
+            status: student.status,
+            department: department ? {
+              _id: department._id,
+              name: department.name,
+              school: school ? {
+                _id: school._id,
+                name: school.name,
+              } : null,
+            } : null,
+            currentTerm: currentTerm ? {
+              _id: currentTerm._id,
+              name: currentTerm.name,
+              session: currentSession ? {
+                _id: currentSession._id,
+                label: currentSession.label,
+              } : null,
+            } : null,
+          },
+        };
+      }
+    }
+
+    return baseProfile;
+  },
+});
+
+/**
  * Update user profile
  */
 export const updateProfile = mutation({
@@ -254,6 +344,7 @@ export const list = query({
  * 
  * Creates a new user account with hashed password and profile information.
  * Validates all user invariants before creation.
+ * If the user has the 'student' role and student data is provided, also creates a student record.
  * This replaces the register function and does what register used to do.
  */
 export const createUser = mutation({
@@ -266,6 +357,12 @@ export const createUser = mutation({
       middleName: v.optional(v.string()),
       lastName: v.string(),
     }),
+    studentData: v.optional(v.object({
+      studentNumber: v.string(),
+      departmentId: v.id("departments"),
+      level: v.string(),
+      status: v.string(),
+    })),
   },
   handler: async (ctx, args) => {
     // Check if email already exists
@@ -302,6 +399,52 @@ export const createUser = mutation({
       active: true,
     });
 
+    // If user has 'student' role and student data is provided, create student record
+    let studentId = undefined;
+    if (args.roles.includes("student") && args.studentData) {
+      // Validate department exists
+      const department = await ctx.db.get(args.studentData.departmentId);
+      if (!department) {
+        throw new NotFoundError("Department", args.studentData.departmentId);
+      }
+
+      // Validate student number uniqueness
+      const existingStudent = await ctx.db
+        .query("students")
+        .withIndex("by_studentNumber", (q) => q.eq("studentNumber", args.studentData!.studentNumber))
+        .first();
+      
+      if (existingStudent) {
+        throw new ValidationError(
+          "studentNumber",
+          "Student number already exists"
+        );
+      }
+
+      // Validate user doesn't already have a student record
+      const existingStudentByUser = await ctx.db
+        .query("students")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .first();
+      
+      if (existingStudentByUser) {
+        throw new ValidationError(
+          "userId",
+          "User already has a student record"
+        );
+      }
+
+      // Create the student record
+      studentId = await ctx.db.insert("students", {
+        userId: userId,
+        studentNumber: args.studentData.studentNumber,
+        admissionYear: new Date().getFullYear(),
+        departmentId: args.studentData.departmentId,
+        level: args.studentData.level,
+        status: args.studentData.status,
+      });
+    }
+
     // Create a session for the newly created user (same as register did)
     const token = await createSession(ctx.db, userId);
 
@@ -312,6 +455,7 @@ export const createUser = mutation({
       token,
       roles: args.roles as UserRole[],
       profile: args.profile,
+      studentId,
     };
   },
 });

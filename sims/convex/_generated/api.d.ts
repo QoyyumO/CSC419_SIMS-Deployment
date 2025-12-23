@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as courses from "../courses.js";
 import type * as dashboard from "../dashboard.js";
 import type * as departments from "../departments.js";
 import type * as examples_studentMutations from "../examples/studentMutations.js";
@@ -17,7 +18,6 @@ import type * as lib_aggregates_courseAggregate from "../lib/aggregates/courseAg
 import type * as lib_aggregates_enrollmentAggregate from "../lib/aggregates/enrollmentAggregate.js";
 import type * as lib_aggregates_graduationAggregate from "../lib/aggregates/graduationAggregate.js";
 import type * as lib_aggregates_index from "../lib/aggregates/index.js";
-import type * as lib_aggregates_programAggregate from "../lib/aggregates/programAggregate.js";
 import type * as lib_aggregates_schoolAggregate from "../lib/aggregates/schoolAggregate.js";
 import type * as lib_aggregates_sectionAggregate from "../lib/aggregates/sectionAggregate.js";
 import type * as lib_aggregates_studentAggregate from "../lib/aggregates/studentAggregate.js";
@@ -38,7 +38,6 @@ import type * as mutations_courseMutations from "../mutations/courseMutations.js
 import type * as mutations_enrollmentMutations from "../mutations/enrollmentMutations.js";
 import type * as mutations_gradeMutations from "../mutations/gradeMutations.js";
 import type * as mutations_graduationMutations from "../mutations/graduationMutations.js";
-import type * as mutations_programMutations from "../mutations/programMutations.js";
 import type * as mutations_sectionMutations from "../mutations/sectionMutations.js";
 import type * as mutations_transcriptMutations from "../mutations/transcriptMutations.js";
 import type * as mutations_userMutations from "../mutations/userMutations.js";
@@ -53,6 +52,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  courses: typeof courses;
   dashboard: typeof dashboard;
   departments: typeof departments;
   "examples/studentMutations": typeof examples_studentMutations;
@@ -61,7 +61,6 @@ declare const fullApi: ApiFromModules<{
   "lib/aggregates/enrollmentAggregate": typeof lib_aggregates_enrollmentAggregate;
   "lib/aggregates/graduationAggregate": typeof lib_aggregates_graduationAggregate;
   "lib/aggregates/index": typeof lib_aggregates_index;
-  "lib/aggregates/programAggregate": typeof lib_aggregates_programAggregate;
   "lib/aggregates/schoolAggregate": typeof lib_aggregates_schoolAggregate;
   "lib/aggregates/sectionAggregate": typeof lib_aggregates_sectionAggregate;
   "lib/aggregates/studentAggregate": typeof lib_aggregates_studentAggregate;
@@ -82,7 +81,6 @@ declare const fullApi: ApiFromModules<{
   "mutations/enrollmentMutations": typeof mutations_enrollmentMutations;
   "mutations/gradeMutations": typeof mutations_gradeMutations;
   "mutations/graduationMutations": typeof mutations_graduationMutations;
-  "mutations/programMutations": typeof mutations_programMutations;
   "mutations/sectionMutations": typeof mutations_sectionMutations;
   "mutations/transcriptMutations": typeof mutations_transcriptMutations;
   "mutations/userMutations": typeof mutations_userMutations;

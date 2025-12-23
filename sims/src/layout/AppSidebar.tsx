@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from '../context/SidebarContext';
 import { useAuth } from '../hooks/useAuth';
-import { isAdmin } from '../services/permissions.service';
+import { isAdmin, isStudent } from '../services/permissions.service';
 import {
   PencilIcon,
   ChevronDownIcon,
@@ -14,6 +14,7 @@ import {
   GroupIcon,
   PieChartIcon,
   UserIcon,
+  FileIcon,
 } from '../icons';
 
 type NavItem = {
@@ -29,6 +30,7 @@ const AppSidebar: React.FC = () => {
   const { user } = useAuth();
   const roles = user?.roles || [];
   const userIsAdmin = isAdmin(roles);
+  const userIsStudent = isStudent(roles);
 
   const navItems: NavItem[] = useMemo(() => [
     {
@@ -36,11 +38,21 @@ const AppSidebar: React.FC = () => {
       name: 'Dashboard',
       path: '/',
     },
-    {
-      icon: <PencilIcon />,
-      name: 'Grades',
-      path: '/grades',
-    },
+    // Only show courses link for students
+    ...(userIsStudent
+      ? [
+          {
+            icon: <FileIcon />,
+            name: 'Courses',
+            path: '/courses',
+          },
+          {
+            icon: <PencilIcon />,
+            name: 'Grades',
+            path: '/grades',
+          },
+        ]
+      : []),
     // Only show admin links for admins
     ...(userIsAdmin
       ? [
@@ -61,7 +73,7 @@ const AppSidebar: React.FC = () => {
           },
         ]
       : []),
-  ], [userIsAdmin]);
+  ], [userIsAdmin, userIsStudent]);
 
   const renderMenuItems = (
     navItems: NavItem[],

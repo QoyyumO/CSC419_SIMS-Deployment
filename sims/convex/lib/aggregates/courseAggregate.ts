@@ -36,15 +36,18 @@ export async function validateCourseCodeUniqueness(
  */
 export async function validateCoursePrerequisites(
   db: DatabaseReader,
-  prerequisites: Id<"courses">[]
+  prerequisites: string[]
 ): Promise<void> {
-  for (const prereqId of prerequisites) {
-    const course = await db.get(prereqId);
+  for (const prereqCode of prerequisites) {
+    const course = await db
+      .query("courses")
+      .withIndex("by_code", (q) => q.eq("code", prereqCode))
+      .first();
     if (!course) {
       throw new InvariantViolationError(
         "CourseAggregate",
         "Prerequisite Validity",
-        `Prerequisite course with id '${prereqId}' does not exist`
+        `Prerequisite course with code '${prereqCode}' does not exist`
       );
     }
   }
@@ -55,10 +58,10 @@ export async function validateCoursePrerequisites(
  * Uses a simple check: a course cannot be a prerequisite of itself
  */
 export function validateNoCircularPrerequisites(
-  courseId: Id<"courses">,
-  prerequisites: Id<"courses">[]
+  courseCode: string,
+  prerequisites: string[]
 ): void {
-  if (prerequisites.includes(courseId)) {
+  if (prerequisites.includes(courseCode)) {
     throw new InvariantViolationError(
       "CourseAggregate",
       "Circular Dependency Prevention",
@@ -95,14 +98,12 @@ export async function validateCreateCourse(
   db: DatabaseReader,
   code: string,
   credits: number,
-  prerequisites: Id<"courses">[]
+  prerequisites: string[]
 ): Promise<void> {
   await validateCourseCodeUniqueness(db, code);
   validateCreditValue(credits);
+  validateNoCircularPrerequisites(code, prerequisites);
   await validateCoursePrerequisites(db, prerequisites);
-  
-  // Note: Circular dependency check requires the course ID, which we don't have yet
-  // This will be checked after creation or in a separate validation step
 }
 
 /**
@@ -113,7 +114,7 @@ export async function validateUpdateCourse(
   courseId: Id<"courses">,
   code?: string,
   credits?: number,
-  prerequisites?: Id<"courses">[]
+  prerequisites?: string[]
 ): Promise<void> {
   const course = await db.get(courseId);
   if (!course) {
@@ -129,7 +130,9 @@ export async function validateUpdateCourse(
   }
 
   if (prerequisites) {
-    validateNoCircularPrerequisites(courseId, prerequisites);
+    // Use the current code or the new code if being updated
+    const courseCode = code ?? course.code;
+    validateNoCircularPrerequisites(courseCode, prerequisites);
     await validateCoursePrerequisites(db, prerequisites);
   }
 }
@@ -139,13 +142,13 @@ export async function validateUpdateCourse(
  */
 export async function getCoursesUsingAsPrerequisite(
   db: DatabaseReader,
-  courseId: Id<"courses">
+  courseCode: string
 ): Promise<Id<"courses">[]> {
   const allCourses = await db.query("courses").collect();
   const dependentCourses: Id<"courses">[] = [];
 
   for (const course of allCourses) {
-    if (course.prerequisites.includes(courseId)) {
+    if (course.prerequisites.includes(courseCode)) {
       dependentCourses.push(course._id);
     }
   }

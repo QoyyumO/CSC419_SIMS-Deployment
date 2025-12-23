@@ -2,6 +2,7 @@
 
 import { isStudent } from '@/services/permissions.service';
 import AdminDashboard from './_components/AdminDashboard';
+import StudentDashboardView from './_components/StudentDashboard';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Dashboard() {
@@ -10,7 +11,7 @@ export default function Dashboard() {
   
   return (
     <>
-      {isStudent(roles) ? <div>Student Dashboard - Coming Soon</div> : <AdminDashboard />}
+      {isStudent(roles) ? <StudentDashboardView /> : <AdminDashboard />}
     </>
   );
 }

@@ -33,24 +33,9 @@ export interface School {
 }
 
 // ============================================================================
-// Program Aggregate Types
+// Program Aggregate Types (REMOVED - Programs no longer exist)
 // ============================================================================
-
-export interface ProgramRequirements {
-  minCredits?: number;
-  maxCredits?: number;
-  minGPA?: number;
-  requiredCourses?: Id<"courses">[];
-  [key: string]: unknown; // Allow additional flexible fields
-}
-
-export interface Program {
-  _id: Id<"programs">;
-  departmentId: Id<"departments">;
-  code: string;
-  name: string;
-  requirements?: ProgramRequirements;
-}
+// Programs have been removed from the schema. Students now belong directly to departments.
 
 // ============================================================================
 // Course Aggregate Types
@@ -62,7 +47,7 @@ export interface Course {
   title: string;
   description: string;
   credits: number;
-  prerequisites: Id<"courses">[];
+  prerequisites: string[]; // Course codes instead of IDs
 }
 
 // ============================================================================
@@ -106,7 +91,7 @@ export interface Student {
   userId: Id<"users">;
   studentNumber: string;
   admissionYear: number;
-  programId: Id<"programs">;
+  departmentId: Id<"departments">;
   level: string;
   status: StudentStatus;
 }

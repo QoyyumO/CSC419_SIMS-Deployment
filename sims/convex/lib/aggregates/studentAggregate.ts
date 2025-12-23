@@ -86,15 +86,15 @@ export async function validateUserAssociation(
 }
 
 /**
- * Validates program association
+ * Validates department association
  */
-export async function validateProgramAssociation(
+export async function validateDepartmentAssociation(
   db: DatabaseReader,
-  programId: Id<"programs">
+  departmentId: Id<"departments">
 ): Promise<void> {
-  const program = await db.get(programId);
-  if (!program) {
-    throw new NotFoundError("Program", programId);
+  const department = await db.get(departmentId);
+  if (!department) {
+    throw new NotFoundError("Department", departmentId);
   }
 }
 
@@ -131,11 +131,11 @@ export async function validateCreateStudent(
   db: DatabaseReader,
   userId: Id<"users">,
   studentNumber: string,
-  programId: Id<"programs">,
+  departmentId: Id<"departments">,
   status: StudentStatus
 ): Promise<void> {
   await validateUserAssociation(db, userId);
-  await validateProgramAssociation(db, programId);
+  await validateDepartmentAssociation(db, departmentId);
   await validateStudentNumberUniqueness(db, studentNumber);
 
   if (!validateStudentStatus(status)) {
@@ -154,7 +154,7 @@ export async function validateUpdateStudent(
   db: DatabaseReader,
   studentId: Id<"students">,
   status?: StudentStatus,
-  programId?: Id<"programs">
+  departmentId?: Id<"departments">
 ): Promise<void> {
   const student = await db.get(studentId);
   if (!student) {
@@ -172,8 +172,8 @@ export async function validateUpdateStudent(
     validateStatusTransition(student.status as StudentStatus, status);
   }
 
-  if (programId) {
-    await validateProgramAssociation(db, programId);
+  if (departmentId) {
+    await validateDepartmentAssociation(db, departmentId);
   }
 }
 

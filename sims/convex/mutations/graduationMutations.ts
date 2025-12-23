@@ -19,8 +19,8 @@ import { logGraduationApproved } from "../lib/services/auditLogService";
  * Operation: Process a Student's Graduation
  * 
  * This is a transactional operation that:
- * 1. Runs degree audit against ProgramAggregate
- * 2. Validates all program requirements are satisfied
+ * 1. Runs degree audit
+ * 2. Validates all graduation requirements are satisfied
  * 3. Updates student status to "graduated"
  * 4. Creates graduation record
  * 5. Creates audit log
@@ -44,10 +44,10 @@ export const processStudentGraduation = mutation({
     await validateApproverAuthority(ctx.db, args.approverUserId);
 
     // Step 3: Run degree audit (GraduationService)
-    // This checks all program requirements
+    // This checks all graduation requirements
     const auditResult = await runDegreeAudit(ctx.db, args.studentId);
 
-    // Step 4: Invariant Check: All program requirements must be satisfied
+    // Step 4: Invariant Check: All graduation requirements must be satisfied
     if (!auditResult.eligible) {
       throw new Error(
         `Student does not meet graduation requirements: ${auditResult.missingRequirements.join("; ")}`
@@ -74,7 +74,7 @@ export const processStudentGraduation = mutation({
       graduationId,
       {
         studentId: args.studentId,
-        programId: student.programId,
+        departmentId: student.departmentId,
         auditResult: {
           totalCredits: auditResult.totalCredits,
           requiredCredits: auditResult.requiredCredits,

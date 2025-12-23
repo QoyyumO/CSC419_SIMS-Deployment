@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/lib/convex';
+import { Id } from '@/lib/convex';
 import { Modal } from '@/components/ui/modal';
 import Input from '@/components/form/input/InputField';
 import Select from '@/components/form/Select';
@@ -24,6 +25,21 @@ const createRoleOptions: { value: string; label: string }[] = [
   { value: 'department_head', label: 'Department Head' },
 ];
 
+const levelOptions: { value: string; label: string }[] = [
+  { value: '100', label: '100 Level' },
+  { value: '200', label: '200 Level' },
+  { value: '300', label: '300 Level' },
+  { value: '400', label: '400 Level' },
+  { value: '500', label: '500 Level' },
+];
+
+const statusOptions: { value: string; label: string }[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'graduated', label: 'Graduated' },
+];
+
 export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserProps) {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -31,6 +47,10 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
     email: '',
     password: '',
     role: '',
+    studentNumber: '',
+    departmentId: '',
+    level: '',
+    status: 'active',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -39,12 +59,26 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
     lastName?: string;
     email?: string;
     role?: string;
+    studentNumber?: string;
+    departmentId?: string;
+    level?: string;
   }>({});
 
   const createUserMutation = useMutation(api.users.createUser);
+  const departments = useQuery(api.departments.list);
+
+  const isStudentRole = formData.role === 'student';
 
   const validate = (): boolean => {
-    const errors: { firstName?: string; lastName?: string; email?: string; role?: string } = {};
+    const errors: { 
+      firstName?: string; 
+      lastName?: string; 
+      email?: string; 
+      role?: string;
+      studentNumber?: string;
+      departmentId?: string;
+      level?: string;
+    } = {};
 
     if (!formData.firstName.trim()) {
       errors.firstName = 'First name is required';
@@ -64,6 +98,21 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
       errors.role = 'Role is required';
     }
 
+    // Validate student-specific fields if role is student
+    if (isStudentRole) {
+      if (!formData.studentNumber.trim()) {
+        errors.studentNumber = 'Student number is required';
+      }
+
+      if (!formData.departmentId) {
+        errors.departmentId = 'Department is required';
+      }
+
+      if (!formData.level) {
+        errors.level = 'Level is required';
+      }
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -77,6 +126,12 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
       setApiError(null);
     }
   };
+
+  // Prepare department options for select
+  const departmentOptions = departments?.map((department) => ({
+    value: department._id,
+    label: `${department.name}${department.schoolName ? ` (${department.schoolName})` : ''}`,
+  })) || [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +148,21 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
     const password = formData.password || `Temp${Math.random().toString(36).slice(-8)}!`;
 
     try {
-      await createUserMutation({
+      const mutationData: {
+        email: string;
+        password: string;
+        roles: string[];
+        profile: {
+          firstName: string;
+          lastName: string;
+        };
+        studentData?: {
+          studentNumber: string;
+          departmentId: Id<'departments'>;
+          level: string;
+          status: string;
+        };
+      } = {
         email: formData.email.trim(),
         password: password,
         roles: [formData.role],
@@ -101,10 +170,32 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
         },
-      });
+      };
+
+      // Include student data if role is student
+      if (isStudentRole) {
+        mutationData.studentData = {
+          studentNumber: formData.studentNumber.trim(),
+          departmentId: formData.departmentId as Id<'departments'>,
+          level: formData.level,
+          status: formData.status,
+        };
+      }
+
+      await createUserMutation(mutationData);
 
       // Reset form and close modal
-      setFormData({ firstName: '', lastName: '', email: '', password: '', role: '' });
+      setFormData({ 
+        firstName: '', 
+        lastName: '', 
+        email: '', 
+        password: '', 
+        role: '',
+        studentNumber: '',
+        departmentId: '',
+        level: '',
+        status: 'active',
+      });
       onClose();
       // Notify parent of success
       if (onSuccess) {
@@ -230,6 +321,82 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
                 <p className="text-error-500 mt-1 text-sm">{validationErrors.role}</p>
               )}
             </div>
+
+            {/* Student-specific fields */}
+            {isStudentRole && (
+              <>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h5 className="text-sm font-semibold text-gray-800 mb-4 dark:text-white/90">
+                    Student Information
+                  </h5>
+                </div>
+
+                <div>
+                  <Label htmlFor="studentNumber">
+                    Student Number <span className="text-error-500">*</span>
+                  </Label>
+                  <Input
+                    id="studentNumber"
+                    type="text"
+                    placeholder="Enter student number"
+                    value={formData.studentNumber}
+                    onChange={(e) => handleInputChange('studentNumber', e.target.value)}
+                    error={!!validationErrors.studentNumber}
+                    disabled={isLoading}
+                  />
+                  {validationErrors.studentNumber && (
+                    <p className="text-error-500 mt-1 text-sm">{validationErrors.studentNumber}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="departmentId">
+                    Department <span className="text-error-500">*</span>
+                  </Label>
+                  <Select
+                    options={departmentOptions}
+                    placeholder="Select a department"
+                    defaultValue={formData.departmentId}
+                    onChange={(e) => handleInputChange('departmentId', e.target.value)}
+                    disabled={isLoading || !departments}
+                    error={!!validationErrors.departmentId}
+                  />
+                  {validationErrors.departmentId && (
+                    <p className="text-error-500 mt-1 text-sm">{validationErrors.departmentId}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="level">
+                    Level <span className="text-error-500">*</span>
+                  </Label>
+                  <Select
+                    options={levelOptions}
+                    placeholder="Select level"
+                    defaultValue={formData.level}
+                    onChange={(e) => handleInputChange('level', e.target.value)}
+                    disabled={isLoading}
+                    error={!!validationErrors.level}
+                  />
+                  {validationErrors.level && (
+                    <p className="text-error-500 mt-1 text-sm">{validationErrors.level}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="status">
+                    Status
+                  </Label>
+                  <Select
+                    options={statusOptions}
+                    placeholder="Select status"
+                    defaultValue={formData.status}
+                    onChange={(e) => handleInputChange('status', e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="flex gap-3 justify-end pt-4">
               <Button

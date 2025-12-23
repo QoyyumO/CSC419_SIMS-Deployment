@@ -75,21 +75,16 @@ export function validateGraduationDate(date: number): void {
 }
 
 /**
- * Checks if student has completed all program requirements
+ * Checks if student has completed all graduation requirements
  * This is a simplified version - adjust based on your requirements structure
  */
-export async function validateProgramRequirements(
+export async function validateGraduationRequirements(
   db: DatabaseReader,
   studentId: Id<"students">
 ): Promise<void> {
   const student = await db.get(studentId);
   if (!student) {
     throw new NotFoundError("Student", studentId);
-  }
-
-  const program = await db.get(student.programId);
-  if (!program) {
-    throw new NotFoundError("Program", student.programId);
   }
 
   // Get student's transcript
@@ -121,7 +116,7 @@ export async function validateProgramRequirements(
     (sum: number, entry: TranscriptEntry) => sum + entry.credits,
     0
   );
-  const minCredits = program.requirements?.minCredits || 120;
+  const minCredits = 120; // Default minimum credits requirement
 
   if (totalCredits < minCredits) {
     throw new InvariantViolationError(
@@ -153,7 +148,7 @@ export async function validateNoDuplicateGraduation(
   if (existing && existing._id !== excludeId) {
     throw new InvariantViolationError(
       "GraduationAggregate",
-      "One Graduation Per Student Per Program",
+      "One Graduation Per Student",
       "Graduation record already exists for this student"
     );
   }
@@ -175,7 +170,7 @@ export async function validateCreateGraduation(
   await validateNoDuplicateGraduation(db, studentId);
 
   if (checkRequirements) {
-    await validateProgramRequirements(db, studentId);
+    await validateGraduationRequirements(db, studentId);
   }
 }
 

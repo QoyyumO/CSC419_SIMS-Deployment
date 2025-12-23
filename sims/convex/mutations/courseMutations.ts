@@ -19,7 +19,9 @@ export const createCourse = mutation({
     title: v.string(),
     description: v.string(),
     credits: v.number(),
-    prerequisites: v.array(v.id("courses")),
+    prerequisites: v.array(v.string()), // Course codes instead of IDs
+    departmentId: v.id("departments"),
+    level: v.string(),
     createdByUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
@@ -38,6 +40,8 @@ export const createCourse = mutation({
       description: args.description,
       credits: args.credits,
       prerequisites: args.prerequisites,
+      departmentId: args.departmentId,
+      level: args.level,
     });
 
     // Create audit log
@@ -67,7 +71,9 @@ export const updateCourse = mutation({
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     credits: v.optional(v.number()),
-    prerequisites: v.optional(v.array(v.id("courses"))),
+    prerequisites: v.optional(v.array(v.string())), // Course codes instead of IDs
+    departmentId: v.optional(v.id("departments")),
+    level: v.optional(v.string()),
     updatedByUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
@@ -92,7 +98,9 @@ export const updateCourse = mutation({
       title?: string;
       description?: string;
       credits?: number;
-      prerequisites?: Id<"courses">[];
+      prerequisites?: string[];
+      departmentId?: Id<"departments">;
+      level?: string;
     } = {};
 
     if (args.code !== undefined) updates.code = args.code;
@@ -100,6 +108,8 @@ export const updateCourse = mutation({
     if (args.description !== undefined) updates.description = args.description;
     if (args.credits !== undefined) updates.credits = args.credits;
     if (args.prerequisites !== undefined) updates.prerequisites = args.prerequisites;
+    if (args.departmentId !== undefined) updates.departmentId = args.departmentId;
+    if (args.level !== undefined) updates.level = args.level;
 
     // Update the course
     await ctx.db.patch(args.courseId, updates);

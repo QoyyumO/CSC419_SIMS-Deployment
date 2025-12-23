@@ -19,9 +19,6 @@
 // School Aggregate
 export * from "./schoolAggregate";
 
-// Program Aggregate
-export * from "./programAggregate";
-
 // Course Aggregate
 export * from "./courseAggregate";
 

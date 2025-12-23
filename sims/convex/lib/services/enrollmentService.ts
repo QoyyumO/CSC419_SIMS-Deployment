@@ -51,17 +51,12 @@ export async function checkPrerequisites(
       .map((entry) => entry.courseCode)
   );
 
-  // Check each prerequisite
+  // Check each prerequisite (now stored as course codes)
   const missingPrerequisites: string[] = [];
 
-  for (const prereqId of course.prerequisites) {
-    const prereqCourse = await db.get(prereqId);
-    if (!prereqCourse) {
-      throw new NotFoundError("Course", prereqId);
-    }
-
-    if (!completedCourseCodes.has(prereqCourse.code)) {
-      missingPrerequisites.push(prereqCourse.code);
+  for (const prereqCode of course.prerequisites) {
+    if (!completedCourseCodes.has(prereqCode)) {
+      missingPrerequisites.push(prereqCode);
     }
   }
 

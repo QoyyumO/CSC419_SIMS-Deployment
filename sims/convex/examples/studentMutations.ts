@@ -34,7 +34,7 @@ export const createStudent = mutation({
   args: {
     userId: v.id("users"),
     studentNumber: v.string(),
-    programId: v.id("programs"),
+    departmentId: v.id("departments"),
     level: v.string(),
     status: v.string(),
     createdByUserId: v.id("users"), // User performing the action (admin/registrar)
@@ -45,7 +45,7 @@ export const createStudent = mutation({
       ctx.db,
       args.userId,
       args.studentNumber,
-      args.programId,
+      args.departmentId,
       args.status as "active" | "suspended" | "graduated" | "inactive"
     );
 
@@ -54,7 +54,7 @@ export const createStudent = mutation({
       userId: args.userId,
       studentNumber: args.studentNumber,
       admissionYear: new Date().getFullYear(),
-      programId: args.programId,
+      departmentId: args.departmentId,
       level: args.level,
       status: args.status,
     });
@@ -67,7 +67,7 @@ export const createStudent = mutation({
       {
         userId: args.userId,
         studentNumber: args.studentNumber,
-        programId: args.programId,
+        departmentId: args.departmentId,
         level: args.level,
         status: args.status,
         admissionYear: new Date().getFullYear(),
@@ -218,7 +218,7 @@ export const createStudentWithErrorHandling = mutation({
   args: {
     userId: v.id("users"),
     studentNumber: v.string(),
-    programId: v.id("programs"),
+    departmentId: v.id("departments"),
     level: v.string(),
     status: v.string(),
     createdByUserId: v.id("users"), // User performing the action
@@ -229,7 +229,7 @@ export const createStudentWithErrorHandling = mutation({
         ctx.db,
         args.userId,
         args.studentNumber,
-        args.programId,
+        args.departmentId,
         args.status as "active" | "suspended" | "graduated" | "inactive"
       );
 
@@ -237,7 +237,7 @@ export const createStudentWithErrorHandling = mutation({
         userId: args.userId,
         studentNumber: args.studentNumber,
         admissionYear: new Date().getFullYear(),
-        programId: args.programId,
+        departmentId: args.departmentId,
         level: args.level,
         status: args.status,
       });
@@ -250,7 +250,7 @@ export const createStudentWithErrorHandling = mutation({
         {
           userId: args.userId,
           studentNumber: args.studentNumber,
-          programId: args.programId,
+          departmentId: args.departmentId,
           level: args.level,
           status: args.status,
           admissionYear: new Date().getFullYear(),

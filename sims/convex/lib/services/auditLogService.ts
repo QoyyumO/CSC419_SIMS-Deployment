@@ -305,37 +305,7 @@ export async function logSectionUpdated(
   );
 }
 
-export async function logProgramCreated(
-  db: DatabaseWriter,
-  userId: Id<"users">,
-  programId: Id<"programs">,
-  details?: Record<string, unknown>
-): Promise<Id<"auditLogs">> {
-  return createAuditLog(
-    db,
-    "program",
-    "ProgramCreated",
-    userId,
-    programId,
-    details
-  );
-}
-
-export async function logProgramUpdated(
-  db: DatabaseWriter,
-  userId: Id<"users">,
-  programId: Id<"programs">,
-  details?: Record<string, unknown>
-): Promise<Id<"auditLogs">> {
-  return createAuditLog(
-    db,
-    "program",
-    "ProgramUpdated",
-    userId,
-    programId,
-    details
-  );
-}
+// Program-related audit log functions removed - programs no longer exist
 
 export async function logAssessmentCreated(
   db: DatabaseWriter,

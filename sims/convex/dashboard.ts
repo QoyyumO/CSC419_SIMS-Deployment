@@ -5,6 +5,9 @@
  */
 
 import { query } from "./_generated/server";
+import { v } from "convex/values";
+import { validateSessionToken } from "./lib/session";
+import { computeFinalGrade } from "./lib/services/gradingService";
 
 /**
  * Get dashboard statistics
@@ -64,6 +67,191 @@ export const getRecentActivity = query({
     );
     
     return activitiesWithUsers;
+  },
+});
+
+/**
+ * Get student statistics and dashboard data
+ * Returns student profile, academic stats (GPA, credits earned), and current schedule
+ */
+export const getStudentStats = query({
+  args: {
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Validate session token and get user
+    if (!args.token) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new Error("Invalid session token");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Verify role is student
+    if (!user.roles.includes("student")) {
+      throw new Error("Access denied: Student role required");
+    }
+
+    // Get student record
+    const student = await ctx.db
+      .query("students")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!student) {
+      throw new Error("Student record not found");
+    }
+
+    // Get department information
+    const department = await ctx.db.get(student.departmentId);
+
+    // Get current term
+    const now = Date.now();
+    const currentTerm = await ctx.db
+      .query("terms")
+      .filter((q) =>
+        q.and(
+          q.lte(q.field("startDate"), now),
+          q.gte(q.field("endDate"), now)
+        )
+      )
+      .first();
+
+    // Get current session
+    let currentSession = null;
+    if (currentTerm) {
+      currentSession = await ctx.db.get(currentTerm.sessionId);
+    }
+
+    // Get all enrollments for the student
+    const allEnrollments = await ctx.db
+      .query("enrollments")
+      .withIndex("by_studentId", (q) => q.eq("studentId", student._id))
+      .collect();
+
+    // Separate completed and active enrollments
+    const completedEnrollments = allEnrollments.filter(
+      (e) => e.status === "completed"
+    );
+    const activeEnrollments = currentTerm
+      ? allEnrollments.filter(
+          (e) =>
+            e.status === "enrolled" && e.termId === currentTerm._id
+        )
+      : [];
+
+    // Calculate academic stats from completed enrollments
+    let totalGradePoints = 0;
+    let totalCredits = 0;
+    let creditsEarned = 0;
+
+    for (const enrollment of completedEnrollments) {
+      try {
+        // Get section and course to get credits
+        const section = await ctx.db.get(enrollment.sectionId);
+        if (!section) continue;
+
+        const course = await ctx.db.get(section.courseId);
+        if (!course) continue;
+
+        // Try to calculate final grade
+        try {
+          const { finalGrade } = await computeFinalGrade(
+            ctx.db,
+            enrollment._id
+          );
+
+          // Only count courses with valid grades for GPA
+          if (finalGrade.points >= 0) {
+            totalGradePoints += finalGrade.points * course.credits;
+            totalCredits += course.credits;
+
+            // Count credits earned (only for passing grades, points > 0)
+            if (finalGrade.points > 0) {
+              creditsEarned += course.credits;
+            }
+          }
+        } catch {
+          // If final grade can't be calculated (missing assessments/grades), skip
+          // This enrollment won't count toward GPA
+          continue;
+        }
+      } catch {
+        // Skip this enrollment if there's an error
+        continue;
+      }
+    }
+
+    // Calculate GPA
+    const gpa = totalCredits > 0 ? totalGradePoints / totalCredits : 0;
+    const roundedGpa = Math.round(gpa * 100) / 100;
+
+    // Get current schedule (active enrollments for current term)
+    const currentSchedule = await Promise.all(
+      activeEnrollments.map(async (enrollment) => {
+        const section = await ctx.db.get(enrollment.sectionId);
+        if (!section) return null;
+
+        const course = await ctx.db.get(section.courseId);
+        if (!course) return null;
+
+        // Get instructor name
+        const instructor = await ctx.db.get(section.instructorId);
+        const instructorName = instructor
+          ? `${instructor.profile.firstName} ${instructor.profile.lastName}`
+          : "TBA";
+
+        // Format schedule from scheduleSlots
+        const scheduleParts: string[] = [];
+        for (const slot of section.scheduleSlots) {
+          scheduleParts.push(`${slot.day} ${slot.startTime}-${slot.endTime}`);
+        }
+        const schedule =
+          scheduleParts.length > 0 ? scheduleParts.join(", ") : "TBA";
+
+        // Get room (use first slot's room, or "TBA" if no slots)
+        const room =
+          section.scheduleSlots.length > 0
+            ? section.scheduleSlots[0].room
+            : "TBA";
+
+        return {
+          courseCode: course.code,
+          courseTitle: course.title,
+          schedule,
+          room,
+          instructor: instructorName,
+        };
+      })
+    );
+
+    // Filter out null values
+    const validSchedule = currentSchedule.filter(
+      (item): item is NonNullable<typeof item> => item !== null
+    );
+
+    return {
+      studentProfile: {
+        name: `${user.profile.firstName} ${user.profile.lastName}`.trim(),
+        program: department?.name || "N/A",
+        session: currentSession?.label || "N/A",
+        term: currentTerm?.name || "N/A",
+        status: student.status,
+      },
+      academicStats: {
+        gpa: roundedGpa,
+        creditsEarned,
+        totalCredits: totalCredits, // Total credits attempted (for context)
+      },
+      currentSchedule: validSchedule,
+    };
   },
 });
 
