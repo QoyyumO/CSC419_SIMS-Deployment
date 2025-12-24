@@ -10,6 +10,30 @@ import { Id } from "../../_generated/dataModel";
 import { InvariantViolationError, NotFoundError } from "../errors";
 
 /**
+ * Valid course status values
+ * C = Core/Required
+ * R = Required
+ * E = Elective
+ */
+export type CourseStatus = "C" | "R" | "E";
+
+export const VALID_COURSE_STATUSES: CourseStatus[] = ["C", "R", "E"];
+
+/**
+ * Validates course status is from allowed set
+ */
+export function validateCourseStatus(status: string): status is CourseStatus {
+  return VALID_COURSE_STATUSES.includes(status as CourseStatus);
+}
+
+/**
+ * Checks if a course status indicates it's a required course (C or R)
+ */
+export function isRequiredCourse(status: string): boolean {
+  return status === "C" || status === "R";
+}
+
+/**
  * Validates course code uniqueness
  */
 export async function validateCourseCodeUniqueness(

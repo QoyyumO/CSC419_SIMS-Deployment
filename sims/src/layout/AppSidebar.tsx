@@ -67,6 +67,11 @@ const AppSidebar: React.FC = () => {
             path: '/departments',
           },
           {
+            icon: <FileIcon />,
+            name: 'Programs',
+            path: '/programs',
+          },
+          {
             icon: <UserIcon />,
             name: 'Users',
             path: '/users',

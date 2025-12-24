@@ -16,6 +16,11 @@ type Course = {
     _id: Id<'departments'>;
     name: string;
   } | null;
+  programs: Array<{
+    _id: Id<'programs'>;
+    name: string;
+  }>;
+  status: string;
   level: string;
 };
 
@@ -66,6 +71,12 @@ export default function CoursesTable({ courses, isLoading }: CoursesTableProps) 
               Department
             </TableCell>
             <TableCell isHeader className="px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400">
+              Programs
+            </TableCell>
+            <TableCell isHeader className="px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400">
+              Status
+            </TableCell>
+            <TableCell isHeader className="px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400">
               Level
             </TableCell>
           </TableRow>
@@ -88,6 +99,37 @@ export default function CoursesTable({ courses, isLoading }: CoursesTableProps) 
               </TableCell>
               <TableCell className="px-5 py-3 text-start">
                 {course.department?.name || '-'}
+              </TableCell>
+              <TableCell className="px-5 py-3 text-start">
+                {course.programs && course.programs.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {course.programs.slice(0, 2).map((program) => (
+                      <Badge key={program._id} color="info" variant="light" size="sm">
+                        {program.name}
+                      </Badge>
+                    ))}
+                    {course.programs.length > 2 && (
+                      <Badge color="info" variant="light" size="sm">
+                        +{course.programs.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </TableCell>
+              <TableCell className="px-5 py-3 text-start">
+                <Badge 
+                  color={
+                    course.status === 'C' ? 'primary' : 
+                    course.status === 'R' ? 'success' : 
+                    'light'
+                  } 
+                  variant="light" 
+                  size="sm"
+                >
+                  {course.status === 'C' ? 'Core' : course.status === 'R' ? 'Required' : course.status === 'E' ? 'Elective' : course.status || 'E'}
+                </Badge>
               </TableCell>
               <TableCell className="px-5 py-3 text-start">
                 <Badge color="primary" variant="light" size="sm">

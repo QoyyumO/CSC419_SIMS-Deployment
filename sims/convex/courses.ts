@@ -84,10 +84,23 @@ export const listPublic = query({
       );
     }
 
-    // Fetch department information for each course
-    const coursesWithDepartments = await Promise.all(
+    // Fetch department and program information for each course
+    const coursesWithDetails = await Promise.all(
       courses.map(async (course) => {
         const department = await ctx.db.get(course.departmentId);
+        
+        // Fetch program information
+        const programs = await Promise.all(
+          (course.programIds || []).map(async (programId) => {
+            const program = await ctx.db.get(programId);
+            return program
+              ? {
+                  _id: program._id,
+                  name: program.name,
+                }
+              : null;
+          })
+        );
         
         return {
           _id: course._id,
@@ -100,12 +113,14 @@ export const listPublic = query({
                 name: department.name,
               }
             : null,
+          programs: programs.filter((p) => p !== null),
+          status: course.status || "E",
           level: course.level,
         };
       })
     );
 
-    return coursesWithDepartments;
+    return coursesWithDetails;
   },
 });
 

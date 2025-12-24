@@ -67,6 +67,21 @@ export default defineSchema({
     .index("by_name", ["name"]),
 
   /**
+   * Programs Collection
+   * Represents academic programs offered by departments (e.g., BSc Computer Science)
+   * Foreign Keys: departmentId → departments._id
+   */
+  programs: defineTable({
+    departmentId: v.id("departments"),
+    name: v.string(),
+    durationYears: v.number(),
+    creditRequirements: v.number(),
+    requiredCourses: v.array(v.id("courses")), // Array of course IDs that are required
+  })
+    .index("by_departmentId", ["departmentId"])
+    .index("by_name", ["name"]),
+
+  /**
    * Courses Collection (AGGREGATE ROOT: CourseAggregate)
    * Represents individual courses that can be offered
    * Foreign Keys: departmentId → departments._id
@@ -79,11 +94,14 @@ export default defineSchema({
     credits: v.number(),
     prerequisites: v.array(v.string()), // Course codes instead of IDs
     departmentId: v.id("departments"),
+    programIds: v.array(v.id("programs")), // Array of program IDs this course belongs to
+    status: v.string(), // Course status: "C" (Core/Required), "R" (Required), "E" (Elective)
     level: v.string(), // Course level: "100", "200", "300", "400", "500"
   })
     .index("by_code", ["code"])
     .index("by_departmentId", ["departmentId"])
     .index("by_level", ["level"])
+    .index("by_status", ["status"])
     .index("by_departmentId_level", ["departmentId", "level"]),
 
   /**

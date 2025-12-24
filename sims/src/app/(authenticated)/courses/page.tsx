@@ -18,6 +18,11 @@ type Course = {
     _id: Id<'departments'>;
     name: string;
   } | null;
+  programs: Array<{
+    _id: Id<'programs'>;
+    name: string;
+  }>;
+  status: string;
   level: string;
 };
 
