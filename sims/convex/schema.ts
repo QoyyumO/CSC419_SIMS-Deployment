@@ -199,6 +199,8 @@ export default defineSchema({
     termId: v.id("terms"), // AcademicPeriod: termId
     status: v.string(),
     enrolledAt: v.number(), // Unix timestamp
+    grade: v.optional(v.string()), // Optional grade (e.g., "A", "B+", "85")
+    term: v.optional(v.string()), // Optional term name as string
   })
     .index("by_studentId", ["studentId"])
     .index("by_sectionId", ["sectionId"])
@@ -371,5 +373,16 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_userId_read", ["userId", "read"])
     .index("by_createdAt", ["createdAt"]),
+
+  /**
+   * Settings Collection
+   * Represents system-wide configuration settings
+   */
+  settings: defineTable({
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(), // Unix timestamp
+  })
+    .index("by_key", ["key"]),
 });
 

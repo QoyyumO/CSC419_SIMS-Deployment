@@ -84,6 +84,52 @@ export const listPublic = query({
       );
     }
 
+    // Get current or next term
+    const now = Date.now();
+    const allTerms = await ctx.db.query("terms").collect();
+    
+    // First, try to find a term that is currently in progress
+    const currentTerm = allTerms.find(
+      (term) => term.startDate <= now && term.endDate >= now
+    );
+    
+    let effectiveTerm: { _id: Id<"terms"> } | null = null;
+    
+    if (currentTerm) {
+      effectiveTerm = { _id: currentTerm._id };
+    } else {
+      // If no current term, find the next upcoming term
+      const upcomingTerms = allTerms
+        .filter((term) => term.startDate > now)
+        .sort((a, b) => a.startDate - b.startDate);
+      
+      if (upcomingTerms.length > 0) {
+        effectiveTerm = { _id: upcomingTerms[0]._id };
+      }
+    }
+
+    // Filter courses to only show those with published sections for the current term
+    if (effectiveTerm) {
+      const courseIdsWithPublishedSections = new Set<Id<"courses">>();
+      
+      // Get all sections for the current term that are published
+      const publishedSections = await ctx.db
+        .query("sections")
+        .withIndex("by_termId", (q) => q.eq("termId", effectiveTerm!._id))
+        .filter((q) => q.eq(q.field("isOpenForEnrollment"), true))
+        .collect();
+      
+      // Collect unique course IDs from published sections
+      for (const section of publishedSections) {
+        courseIdsWithPublishedSections.add(section.courseId);
+      }
+      
+      // Filter courses to only include those with published sections
+      courses = courses.filter((course) =>
+        courseIdsWithPublishedSections.has(course._id)
+      );
+    }
+
     // Fetch department and program information for each course
     const coursesWithDetails = await Promise.all(
       courses.map(async (course) => {

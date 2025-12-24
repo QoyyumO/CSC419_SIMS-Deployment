@@ -53,6 +53,15 @@ export default function CreateSectionModal({
     details: "",
   });
 
+  const [scheduleSlots, setScheduleSlots] = useState<
+    Array<{
+      day: string;
+      startTime: string;
+      endTime: string;
+      room: string;
+    }>
+  >([]);
+
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +98,7 @@ export default function CreateSectionModal({
         capacity: "",
         details: "",
       });
+      setScheduleSlots([]);
       setValidationErrors({});
       setApiError(null);
       setCourseSearchQuery("");
@@ -162,12 +172,18 @@ export default function CreateSectionModal({
     setIsLoading(true);
 
     try {
+      // Filter out incomplete schedule slots
+      const validScheduleSlots = scheduleSlots.filter(
+        (slot) => slot.day && slot.startTime && slot.endTime && slot.room
+      );
+
       await createSection({
         token: sessionToken,
         courseId: formData.courseId as Id<"courses">,
         termId: formData.termId as Id<"terms">,
         capacity: parseInt(formData.capacity, 10),
         details: formData.details || undefined,
+        scheduleSlots: validScheduleSlots.length > 0 ? validScheduleSlots : undefined,
       });
 
       onSuccess();
@@ -215,6 +231,38 @@ export default function CreateSectionModal({
       setFormData((prev) => ({ ...prev, courseId: "" }));
     }
   };
+
+  const addScheduleSlot = () => {
+    setScheduleSlots([
+      ...scheduleSlots,
+      { day: "", startTime: "", endTime: "", room: "" },
+    ]);
+  };
+
+  const removeScheduleSlot = (index: number) => {
+    setScheduleSlots(scheduleSlots.filter((_, i) => i !== index));
+  };
+
+  const updateScheduleSlot = (
+    index: number,
+    field: "day" | "startTime" | "endTime" | "room",
+    value: string
+  ) => {
+    const updated = [...scheduleSlots];
+    updated[index] = { ...updated[index], [field]: value };
+    setScheduleSlots(updated);
+  };
+
+  const dayOptions = [
+    { value: "", label: "Select day" },
+    { value: "Mon", label: "Monday" },
+    { value: "Tue", label: "Tuesday" },
+    { value: "Wed", label: "Wednesday" },
+    { value: "Thu", label: "Thursday" },
+    { value: "Fri", label: "Friday" },
+    { value: "Sat", label: "Saturday" },
+    { value: "Sun", label: "Sunday" },
+  ];
 
   const termOptions =
     terms?.map((term) => ({
@@ -362,6 +410,116 @@ export default function CreateSectionModal({
                   disabled={isLoading}
                   className="h-24 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
+              </div>
+
+              {/* Schedule Slots Section */}
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <Label>
+                    Schedule & Room <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addScheduleSlot}
+                    disabled={isLoading}
+                  >
+                    + Add Schedule Slot
+                  </Button>
+                </div>
+
+                {scheduleSlots.length === 0 && (
+                  <p className="text-gray-500 text-sm dark:text-gray-400">
+                    No schedule slots added. Click &quot;Add Schedule Slot&quot; to add one.
+                  </p>
+                )}
+
+                {scheduleSlots.map((slot, index) => (
+                  <div
+                    key={index}
+                    className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Schedule Slot {index + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeScheduleSlot(index)}
+                        disabled={isLoading}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor={`slot-day-${index}`}>
+                          Day <span className="text-error-500">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Select
+                            options={dayOptions}
+                            placeholder="Select day"
+                            onChange={(e) =>
+                              updateScheduleSlot(index, "day", e.target.value)
+                            }
+                            defaultValue={slot.day}
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`slot-room-${index}`}>
+                          Room <span className="text-error-500">*</span>
+                        </Label>
+                        <Input
+                          id={`slot-room-${index}`}
+                          type="text"
+                          placeholder="e.g., Room 101"
+                          value={slot.room}
+                          onChange={(e) =>
+                            updateScheduleSlot(index, "room", e.target.value)
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`slot-start-${index}`}>
+                          Start Time <span className="text-error-500">*</span>
+                        </Label>
+                        <Input
+                          id={`slot-start-${index}`}
+                          type="time"
+                          value={slot.startTime}
+                          onChange={(e) =>
+                            updateScheduleSlot(index, "startTime", e.target.value)
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`slot-end-${index}`}>
+                          End Time <span className="text-error-500">*</span>
+                        </Label>
+                        <Input
+                          id={`slot-end-${index}`}
+                          type="time"
+                          value={slot.endTime}
+                          onChange={(e) =>
+                            updateScheduleSlot(index, "endTime", e.target.value)
+                          }
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="mt-8 flex w-full items-center justify-end gap-3">

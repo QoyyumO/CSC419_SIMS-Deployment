@@ -284,6 +284,16 @@ export const createSection = mutation({
     capacity: v.number(),
     details: v.optional(v.string()),
     instructorId: v.optional(v.id("users")),
+    scheduleSlots: v.optional(
+      v.array(
+        v.object({
+          day: v.string(),
+          startTime: v.string(),
+          endTime: v.string(),
+          room: v.string(),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     // Validate session token and get user
@@ -371,7 +381,7 @@ export const createSection = mutation({
       termId: args.termId,
       instructorId: instructorIdToUse,
       capacity: args.capacity,
-      scheduleSlots: [], // Empty initially, can be added later
+      scheduleSlots: args.scheduleSlots || [], // Use provided schedule slots or empty array
       enrollmentCount: 0,
       isOpenForEnrollment: false, // New sections start as Draft
     });
@@ -1072,6 +1082,14 @@ export const deleteSection = mutation({
       throw new ValidationError(
         "sectionId",
         "Section does not belong to your department"
+      );
+    }
+
+    // Prevent deletion of published sections
+    if (section.isOpenForEnrollment === true) {
+      throw new ValidationError(
+        "sectionId",
+        "Cannot delete published sections. Please unpublish the section first."
       );
     }
 

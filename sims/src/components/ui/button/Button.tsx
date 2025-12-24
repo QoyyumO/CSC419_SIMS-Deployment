@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 interface ButtonProps {
   children: ReactNode; // Button text or content
   size?: 'sm' | 'md' | 'full'; // Button size, 'full' expands to fill container
-  variant?: 'primary' | 'outline' | 'text-only'; // Button variant, added 'text-only'
+  variant?: 'primary' | 'outline' | 'text-only' | 'danger' | 'warning'; // Button variant
   startIcon?: ReactNode; // Icon before the text
   endIcon?: ReactNode; // Icon after the text
   onClick?: () => void; // Click handler
@@ -38,6 +38,10 @@ const Button: React.FC<ButtonProps> = ({
       'bg-white text-gray-500 border-2 border-gray-300 hover:border-brand-500 hover:text-brand-500 hover:bg-brand-50 hover:shadow-sm hover:scale-[1.02] focus:border-brand-600 focus:text-brand-600 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 border-solid ring-0 shadow-none transition-all duration-150 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:border-brand-500 dark:hover:text-brand-500 dark:hover:bg-brand-900/20 disabled:hover:scale-100 disabled:hover:shadow-none',
     'text-only':
       'bg-transparent text-gray-400 hover:bg-brand-50 hover:text-brand-500 hover:scale-[1.02] focus:bg-brand-100 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:text-brand-300 disabled:hover:scale-100 ring-0 border-0 shadow-none transition-all duration-150', // text-only style
+    danger:
+      'bg-red-500 text-white shadow-theme-xs hover:bg-red-600 hover:shadow-md hover:scale-[1.02] focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-red-300 disabled:hover:scale-100 disabled:hover:shadow-theme-xs',
+    warning:
+      'bg-yellow-500 text-white shadow-theme-xs hover:bg-yellow-600 hover:shadow-md hover:scale-[1.02] focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:bg-yellow-300 disabled:hover:scale-100 disabled:hover:shadow-theme-xs',
   };
 
   return (

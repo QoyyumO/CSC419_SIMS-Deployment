@@ -99,12 +99,24 @@ export default function SectionsTable({
   };
 
   const handleDeleteClick = (section: Section) => {
+    // Prevent opening delete modal for published sections or sections with enrollments
+    if (section.isOpenForEnrollment || section.enrollmentCount > 0) {
+      return;
+    }
     setSectionToDelete(section);
     setDeleteConfirmOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
     if (!sessionToken || !sectionToDelete) return;
+
+    // Prevent deletion of published sections
+    if (sectionToDelete.isOpenForEnrollment) {
+      alert('Cannot delete published sections. Please unpublish the section first.');
+      setDeleteConfirmOpen(false);
+      setSectionToDelete(null);
+      return;
+    }
 
     setDeletingSectionId(sectionToDelete._id);
 
@@ -271,9 +283,9 @@ export default function SectionsTable({
                 <TableCell className="px-5 py-3 text-start">
                   <button
                     onClick={() => handleDeleteClick(section)}
-                    disabled={deletingSectionId === section._id || !sessionToken}
+                    disabled={deletingSectionId === section._id || !sessionToken || section.isOpenForEnrollment || (section.enrollmentCount > 0)}
                     className="flex items-center justify-center rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-red-400 dark:hover:bg-red-900/20"
-                    title="Delete section"
+                    title={section.isOpenForEnrollment ? "Cannot delete published sections" : section.enrollmentCount > 0 ? "Cannot delete sections with enrollments" : "Delete section"}
                   >
                     <TrashBinIcon className="h-5 w-5" />
                   </button>
@@ -305,6 +317,11 @@ export default function SectionsTable({
               <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                 {sectionToDelete.termName} / {sectionToDelete.sessionYearLabel}
               </p>
+              {sectionToDelete.isOpenForEnrollment && (
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                  Warning: This section is published. You cannot delete published sections.
+                </p>
+              )}
               {sectionToDelete.enrollmentCount > 0 && (
                 <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                   Warning: This section has {sectionToDelete.enrollmentCount} enrollment(s). 
@@ -326,7 +343,7 @@ export default function SectionsTable({
               size="sm"
               variant="outline"
               onClick={handleDeleteConfirm}
-              disabled={deletingSectionId !== null || (sectionToDelete?.enrollmentCount ?? 0) > 0}
+              disabled={deletingSectionId !== null || (sectionToDelete?.enrollmentCount ?? 0) > 0 || sectionToDelete?.isOpenForEnrollment}
               className="bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             >
               {deletingSectionId ? 'Deleting...' : 'Delete'}

@@ -140,10 +140,12 @@ export const getStudentStats = query({
     const completedEnrollments = allEnrollments.filter(
       (e) => e.status === "completed"
     );
+    // Include enrolled, active, and waitlisted enrollments for current term
     const activeEnrollments = currentTerm
       ? allEnrollments.filter(
           (e) =>
-            e.status === "enrolled" && e.termId === currentTerm._id
+            (e.status === "enrolled" || e.status === "active" || e.status === "waitlisted") && 
+            e.termId === currentTerm._id
         )
       : [];
 
@@ -223,9 +225,12 @@ export const getStudentStats = query({
             : "TBA";
 
         return {
+          enrollmentId: enrollment._id,
+          enrollmentStatus: enrollment.status,
           courseCode: course.code,
           courseTitle: course.title,
           schedule,
+          scheduleSlots: section.scheduleSlots, // Include raw schedule slots for calendar view
           room,
           instructor: instructorName,
         };
@@ -240,7 +245,7 @@ export const getStudentStats = query({
     return {
       studentProfile: {
         name: `${user.profile.firstName} ${user.profile.lastName}`.trim(),
-        program: department?.name || "N/A",
+        department: department?.name || "N/A",
         session: currentSession?.yearLabel || "N/A",
         term: currentTerm?.name || "N/A",
         status: student.status,

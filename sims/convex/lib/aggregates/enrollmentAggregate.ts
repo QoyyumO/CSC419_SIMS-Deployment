@@ -15,6 +15,8 @@ import { Enrollment, EnrollmentStatus } from "./types";
  */
 export const VALID_ENROLLMENT_STATUSES: EnrollmentStatus[] = [
   "enrolled",
+  "active",
+  "waitlisted",
   "dropped",
   "completed",
   "failed",

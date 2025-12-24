@@ -102,6 +102,8 @@ export interface Student {
 
 export type EnrollmentStatus = 
   | "enrolled" 
+  | "active"
+  | "waitlisted"
   | "dropped" 
   | "completed" 
   | "failed" 
