@@ -47,7 +47,30 @@ export default function ProfilePage() {
               <UserMetaCard user={user} />
               <UserInfoCard user={user} onSuccess={handleSuccess} />
               {isStudent && profileData && "student" in profileData && (
-                <AcademicInfoCard studentData={profileData.student} />
+                <AcademicInfoCard 
+                  studentData={{
+                    studentNumber: profileData.student.studentNumber,
+                    admissionYear: profileData.student.admissionYear,
+                    level: profileData.student.level,
+                    status: profileData.student.status,
+                    department: profileData.student.department ? {
+                      _id: profileData.student.department._id as string,
+                      name: profileData.student.department.name,
+                      school: profileData.student.department.school ? {
+                        _id: profileData.student.department.school._id as string,
+                        name: profileData.student.department.school.name,
+                      } : null,
+                    } : null,
+                    currentTerm: profileData.student.currentTerm ? {
+                      _id: profileData.student.currentTerm._id as string,
+                      name: profileData.student.currentTerm.name,
+                      session: profileData.student.currentTerm.session ? {
+                        _id: profileData.student.currentTerm.session._id as string,
+                        label: profileData.student.currentTerm.session.yearLabel,
+                      } : null,
+                    } : null,
+                  }} 
+                />
               )}
             </div>
           </TabPane>

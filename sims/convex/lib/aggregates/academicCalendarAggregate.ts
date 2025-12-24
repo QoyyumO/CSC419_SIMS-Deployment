@@ -72,23 +72,23 @@ export async function validateNoOverlappingTerms(
 }
 
 /**
- * Validates session label uniqueness
+ * Validates session yearLabel uniqueness
  */
-export async function validateSessionLabelUniqueness(
+export async function validateSessionYearLabelUniqueness(
   db: DatabaseReader,
-  label: string,
+  yearLabel: string,
   excludeId?: Id<"academicSessions">
 ): Promise<void> {
   const existing = await db
     .query("academicSessions")
-    .withIndex("by_label", (q) => q.eq("label", label))
+    .withIndex("by_yearLabel", (q) => q.eq("yearLabel", yearLabel))
     .first();
 
   if (existing && existing._id !== excludeId) {
     throw new InvariantViolationError(
       "AcademicCalendarAggregate",
-      "Session Label Uniqueness",
-      `Academic session with label '${label}' already exists`
+      "Session Year Label Uniqueness",
+      `Academic session with year label '${yearLabel}' already exists`
     );
   }
 }
@@ -111,9 +111,12 @@ export async function validateTermSession(
  */
 export async function validateCreateAcademicSession(
   db: DatabaseReader,
-  label: string
+  yearLabel: string,
+  startDate: number,
+  endDate: number
 ): Promise<void> {
-  await validateSessionLabelUniqueness(db, label);
+  await validateSessionYearLabelUniqueness(db, yearLabel);
+  validateTermDates(startDate, endDate);
 }
 
 /**
@@ -122,16 +125,22 @@ export async function validateCreateAcademicSession(
 export async function validateUpdateAcademicSession(
   db: DatabaseReader,
   sessionId: Id<"academicSessions">,
-  label?: string
+  yearLabel?: string,
+  startDate?: number,
+  endDate?: number
 ): Promise<void> {
   const session = await db.get(sessionId);
   if (!session) {
     throw new NotFoundError("AcademicSession", sessionId);
   }
 
-  if (label && label !== session.label) {
-    await validateSessionLabelUniqueness(db, label, sessionId);
+  if (yearLabel && yearLabel !== session.yearLabel) {
+    await validateSessionYearLabelUniqueness(db, yearLabel, sessionId);
   }
+
+  const finalStartDate = startDate ?? session.startDate;
+  const finalEndDate = endDate ?? session.endDate;
+  validateTermDates(finalStartDate, finalEndDate);
 }
 
 /**

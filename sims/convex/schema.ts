@@ -127,6 +127,7 @@ export default defineSchema({
       })
     ),
     enrollmentCount: v.number(),
+    isOpenForEnrollment: v.optional(v.boolean()), // Whether section is published and open for student enrollment
   })
     .index("by_courseId", ["courseId"])
     .index("by_termId", ["termId"])
@@ -171,6 +172,18 @@ export default defineSchema({
     .index("by_studentNumber", ["studentNumber"])
     .index("by_departmentId", ["departmentId"])
     .index("by_status", ["status"]),
+
+  /**
+   * Instructors Collection
+   * Represents instructor-specific information linked to users
+   * Foreign Keys: userId → users._id, departmentId → departments._id
+   */
+  instructors: defineTable({
+    userId: v.id("users"),
+    departmentId: v.id("departments"),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_departmentId", ["departmentId"]),
 
   /**
    * Enrollments Collection (AGGREGATE ROOT: EnrollmentAggregate)
@@ -269,7 +282,9 @@ export default defineSchema({
    * See ../docs/aggregates_and_invariants.md for invariants
    */
   academicSessions: defineTable({
-    label: v.string(),
+    yearLabel: v.string(), // e.g., "2024/2025"
+    startDate: v.number(), // Unix timestamp
+    endDate: v.number(), // Unix timestamp
     terms: v.array(
       v.object({
         id: v.string(), // Term identifier within the session
@@ -279,7 +294,7 @@ export default defineSchema({
       })
     ),
   })
-    .index("by_label", ["label"]),
+    .index("by_yearLabel", ["yearLabel"]),
 
   /**
    * Terms Collection
@@ -341,5 +356,20 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_userId", ["userId"])
     .index("by_expiresAt", ["expiresAt"]),
+
+  /**
+   * Notifications Collection
+   * Represents user notifications
+   * Foreign Keys: userId → users._id
+   */
+  notifications: defineTable({
+    userId: v.id("users"),
+    message: v.string(),
+    read: v.boolean(),
+    createdAt: v.number(), // Unix timestamp
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_read", ["userId", "read"])
+    .index("by_createdAt", ["createdAt"]),
 });
 

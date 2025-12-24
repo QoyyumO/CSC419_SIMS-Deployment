@@ -178,7 +178,7 @@ export const getProfile = query({
               name: currentTerm.name,
               session: currentSession ? {
                 _id: currentSession._id,
-                label: currentSession.label,
+                yearLabel: currentSession.yearLabel,
               } : null,
             } : null,
           },
@@ -363,6 +363,9 @@ export const createUser = mutation({
       level: v.string(),
       status: v.string(),
     })),
+    instructorData: v.optional(v.object({
+      departmentId: v.id("departments"),
+    })),
   },
   handler: async (ctx, args) => {
     // Check if email already exists
@@ -445,6 +448,35 @@ export const createUser = mutation({
       });
     }
 
+    // If user has 'instructor' role and instructor data is provided, create instructor record
+    let instructorId = undefined;
+    if (args.roles.includes("instructor") && args.instructorData) {
+      // Validate department exists
+      const department = await ctx.db.get(args.instructorData.departmentId);
+      if (!department) {
+        throw new NotFoundError("Department", args.instructorData.departmentId);
+      }
+
+      // Validate user doesn't already have an instructor record
+      const existingInstructor = await ctx.db
+        .query("instructors")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .first();
+      
+      if (existingInstructor) {
+        throw new ValidationError(
+          "userId",
+          "User already has an instructor record"
+        );
+      }
+
+      // Create the instructor record
+      instructorId = await ctx.db.insert("instructors", {
+        userId: userId,
+        departmentId: args.instructorData.departmentId,
+      });
+    }
+
     // Create a session for the newly created user (same as register did)
     const token = await createSession(ctx.db, userId);
 
@@ -456,6 +488,7 @@ export const createUser = mutation({
       roles: args.roles as UserRole[],
       profile: args.profile,
       studentId,
+      instructorId,
     };
   },
 });

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from '../context/SidebarContext';
 import { useAuth } from '../hooks/useAuth';
-import { isAdmin, isStudent } from '../services/permissions.service';
+import { isAdmin, isStudent, isDepartmentHead } from '../services/permissions.service';
 import {
   PencilIcon,
   ChevronDownIcon,
@@ -15,6 +15,7 @@ import {
   PieChartIcon,
   UserIcon,
   FileIcon,
+  CalenderIcon,
 } from '../icons';
 
 type NavItem = {
@@ -31,6 +32,7 @@ const AppSidebar: React.FC = () => {
   const roles = user?.roles || [];
   const userIsAdmin = isAdmin(roles);
   const userIsStudent = isStudent(roles);
+  const userIsDepartmentHead = isDepartmentHead(roles);
 
   const navItems: NavItem[] = useMemo(() => [
     {
@@ -72,13 +74,28 @@ const AppSidebar: React.FC = () => {
             path: '/programs',
           },
           {
+            icon: <CalenderIcon />,
+            name: 'Academic Sessions',
+            path: '/academic-sessions',
+          },
+          {
             icon: <UserIcon />,
             name: 'Users',
             path: '/users',
           },
         ]
       : []),
-  ], [userIsAdmin, userIsStudent]);
+    // Only show sections link for department heads
+    ...(userIsDepartmentHead
+      ? [
+          {
+            icon: <FileIcon />,
+            name: 'Sections',
+            path: '/sections',
+          },
+        ]
+      : []),
+  ], [userIsAdmin, userIsStudent, userIsDepartmentHead]);
 
   const renderMenuItems = (
     navItems: NavItem[],

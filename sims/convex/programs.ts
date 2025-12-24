@@ -7,7 +7,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { NotFoundError } from "./lib/aggregates";
+import { NotFoundError } from "./lib/errors";
 
 /**
  * List all programs with their department information

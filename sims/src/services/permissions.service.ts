@@ -22,3 +22,10 @@ export function isInstructor(roles: UserRole[]): boolean {
   return roles.includes("instructor");
 }
 
+/**
+ * Check if user has department_head role
+ */
+export function isDepartmentHead(roles: UserRole[]): boolean {
+  return roles.includes("department_head");
+}
+

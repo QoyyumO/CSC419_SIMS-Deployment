@@ -241,7 +241,7 @@ export const getStudentStats = query({
       studentProfile: {
         name: `${user.profile.firstName} ${user.profile.lastName}`.trim(),
         program: department?.name || "N/A",
-        session: currentSession?.label || "N/A",
+        session: currentSession?.yearLabel || "N/A",
         term: currentTerm?.name || "N/A",
         status: student.status,
       },

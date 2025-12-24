@@ -68,6 +68,7 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
   const departments = useQuery(api.departments.list);
 
   const isStudentRole = formData.role === 'student';
+  const isInstructorRole = formData.role === 'instructor';
 
   const validate = (): boolean => {
     const errors: { 
@@ -110,6 +111,13 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
 
       if (!formData.level) {
         errors.level = 'Level is required';
+      }
+    }
+
+    // Validate instructor-specific fields if role is instructor
+    if (isInstructorRole) {
+      if (!formData.departmentId) {
+        errors.departmentId = 'Department is required';
       }
     }
 
@@ -162,6 +170,9 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
           level: string;
           status: string;
         };
+        instructorData?: {
+          departmentId: Id<'departments'>;
+        };
       } = {
         email: formData.email.trim(),
         password: password,
@@ -179,6 +190,13 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
           departmentId: formData.departmentId as Id<'departments'>,
           level: formData.level,
           status: formData.status,
+        };
+      }
+
+      // Include instructor data if role is instructor
+      if (isInstructorRole) {
+        mutationData.instructorData = {
+          departmentId: formData.departmentId as Id<'departments'>,
         };
       }
 
@@ -394,6 +412,34 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
                     onChange={(e) => handleInputChange('status', e.target.value)}
                     disabled={isLoading}
                   />
+                </div>
+              </>
+            )}
+
+            {/* Instructor-specific fields */}
+            {isInstructorRole && (
+              <>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h5 className="text-sm font-semibold text-gray-800 mb-4 dark:text-white/90">
+                    Instructor Information
+                  </h5>
+                </div>
+
+                <div>
+                  <Label htmlFor="departmentId">
+                    Department <span className="text-error-500">*</span>
+                  </Label>
+                  <Select
+                    options={departmentOptions}
+                    placeholder="Select a department"
+                    defaultValue={formData.departmentId}
+                    onChange={(e) => handleInputChange('departmentId', e.target.value)}
+                    disabled={isLoading || !departments}
+                    error={!!validationErrors.departmentId}
+                  />
+                  {validationErrors.departmentId && (
+                    <p className="text-error-500 mt-1 text-sm">{validationErrors.departmentId}</p>
+                  )}
                 </div>
               </>
             )}

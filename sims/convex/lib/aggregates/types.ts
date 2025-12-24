@@ -198,7 +198,9 @@ export interface Term {
 
 export interface AcademicSession {
   _id: Id<"academicSessions">;
-  label: string;
+  yearLabel: string;
+  startDate: number;
+  endDate: number;
   terms: Array<{
     id: string;
     name: string;
