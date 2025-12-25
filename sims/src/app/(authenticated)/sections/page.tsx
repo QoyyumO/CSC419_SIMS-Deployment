@@ -11,8 +11,10 @@ import Alert from '@/components/ui/alert/Alert';
 import Select from '@/components/form/Select';
 import Label from '@/components/form/Label';
 import { useModal } from '@/hooks/useModal';
-import { PlusIcon, DownloadIcon } from '@/icons';
+import { DownloadIcon } from '@/icons';
 import { RoleGuard } from '@/components/auth/RoleGuard';
+import Tabs from '@/components/ui/tabs/Tabs';
+import TabPane from '@/components/ui/tabs/TabPane';
 import SectionsTable from './_components/SectionsTable';
 import CreateSectionModal from './_components/CreateSectionModal';
 import InstructorWorkload from './_components/InstructorWorkload';
@@ -53,6 +55,7 @@ export default function SectionsPage() {
   });
 
   const [selectedTermId, setSelectedTermId] = useState<Id<'terms'> | undefined>(undefined);
+  const [selectedWorkloadTermId, setSelectedWorkloadTermId] = useState<Id<'terms'> | undefined>(undefined);
   const createModal = useModal();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [publishMessage, setPublishMessage] = useState<string | null>(null);
@@ -83,13 +86,18 @@ export default function SectionsPage() {
 
   // Set default term to current/next term if no term is selected
   useEffect(() => {
-    if (currentOrNextTerm && !selectedTermId) {
+    if (currentOrNextTerm) {
       // Use setTimeout to avoid calling setState synchronously within effect
       setTimeout(() => {
-        setSelectedTermId(currentOrNextTerm._id);
+        if (!selectedTermId) {
+          setSelectedTermId(currentOrNextTerm._id);
+        }
+        if (!selectedWorkloadTermId) {
+          setSelectedWorkloadTermId(currentOrNextTerm._id);
+        }
       }, 0);
     }
-  }, [currentOrNextTerm, selectedTermId]);
+  }, [currentOrNextTerm, selectedTermId, selectedWorkloadTermId]);
 
   // Fetch sections - use selectedTermId or currentOrNextTerm
   const sections = useQuery(
@@ -137,7 +145,31 @@ export default function SectionsPage() {
       setPublishMessage(`Successfully published ${result.count} section(s)`);
       setTimeout(() => setPublishMessage(null), 3000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to publish sections';
+      // Parse error message to extract user-friendly message
+      let errorMessage = 'Failed to publish sections. Please try again.';
+      
+      if (error instanceof Error) {
+        const errorStr = error.message;
+        
+        if (errorStr.includes('Access denied')) {
+          errorMessage = 'You do not have permission to publish sections. Please contact your administrator.';
+        } else if (errorStr.includes('Authentication required') || errorStr.includes('Invalid session token')) {
+          errorMessage = 'Your session has expired. Please log in again to continue.';
+        } else if (errorStr.includes('not found')) {
+          errorMessage = 'One or more sections could not be found. Please refresh the page and try again.';
+        } else if (errorStr.includes('Validation error')) {
+          // Extract user-friendly message from ValidationError
+          const match = errorStr.match(/Validation error for field '[^']+': (.+)/);
+          if (match) {
+            errorMessage = match[1];
+          } else {
+            errorMessage = errorStr.replace(/Validation error for field '[^']+': /, '');
+          }
+        } else {
+          errorMessage = errorStr;
+        }
+      }
+      
       setPublishErrorMessage(errorMessage);
       setTimeout(() => setPublishErrorMessage(null), 5000);
     }
@@ -196,6 +228,8 @@ export default function SectionsPage() {
     })) || []),
   ];
 
+  const workloadEffectiveTermId = selectedWorkloadTermId || currentOrNextTerm?._id;
+
   return (
     <RoleGuard role="department_head" unauthorizedMessage="You must be a department head to access this page.">
       <div>
@@ -220,70 +254,95 @@ export default function SectionsPage() {
             sessionToken={sessionToken}
             selectedTermId={effectiveTermId}
             onSuccess={handleSuccess}
+            onCreateSection={createModal.openModal}
           />
 
-          {/* Filters and Create Button */}
-          <ComponentCard title="Filters">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="termFilter">Term:</Label>
-                  <div className="relative w-full sm:w-48">
-                    <Select
-                      options={termOptions}
-                      placeholder="Select a term"
-                      onChange={(e) =>
-                        setSelectedTermId(
-                          e.target.value ? (e.target.value as Id<'terms'>) : undefined
-                        )
-                      }
-                      defaultValue={selectedTermId || ''}
-                    />
+          {/* Tabs for Sections and Instructor Workload */}
+          <Tabs tabStyle="independent" justifyTabs="left">
+            <TabPane tab="Sections">
+              <div className="space-y-6">
+                {/* Term Filter for Sections Tab */}
+                <ComponentCard title="Filters">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="termFilter">Term:</Label>
+                      <div className="relative w-full sm:w-48">
+                        <Select
+                          options={termOptions}
+                          placeholder="Select a term"
+                          onChange={(e) =>
+                            setSelectedTermId(
+                              e.target.value ? (e.target.value as Id<'terms'>) : undefined
+                            )
+                          }
+                          defaultValue={selectedTermId || ''}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <Button
-                size="md"
-                startIcon={<PlusIcon />}
-                onClick={createModal.openModal}
-              >
-                Create Section
-              </Button>
-            </div>
-          </ComponentCard>
-          {/* Sections Table */}
-          <ComponentCard title="Sections" desc="Manage course sections for your department">
-            <div className="mb-4 flex justify-end gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                startIcon={<DownloadIcon className="h-4 w-4" />}
-                onClick={handleExportCSV}
-                disabled={!sessionToken || !assignmentReport || assignmentReport.length === 0}
-              >
-                Export CSV
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handlePublishAllReady}
-                disabled={!sessionToken || !sections || sections.length === 0}
-              >
-                Publish All Ready Sections
-              </Button>
-            </div>
-            <SectionsTable 
-              sections={sections} 
-              isLoading={isLoading}
-              sessionToken={sessionToken}
-              selectedTermId={effectiveTermId}
-              onAssignmentChange={handleAssignmentChange}
-              onSectionDeleted={handleSectionDeleted}
-            />
-          </ComponentCard>
+                </ComponentCard>
 
-          {/* Instructor Workload */}
-          <InstructorWorkload sessionToken={sessionToken} selectedTermId={effectiveTermId} />
+                {/* Sections Table */}
+                <ComponentCard title="Sections" desc="Manage course sections for your department">
+                  <div className="mb-4 flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      startIcon={<DownloadIcon className="h-4 w-4" />}
+                      onClick={handleExportCSV}
+                      disabled={!sessionToken || !assignmentReport || assignmentReport.length === 0}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handlePublishAllReady}
+                      disabled={!sessionToken || !sections || sections.length === 0}
+                    >
+                      Publish All Ready Sections
+                    </Button>
+                  </div>
+                  <SectionsTable 
+                    sections={sections} 
+                    isLoading={isLoading}
+                    sessionToken={sessionToken}
+                    selectedTermId={effectiveTermId}
+                    onAssignmentChange={handleAssignmentChange}
+                    onSectionDeleted={handleSectionDeleted}
+                  />
+                </ComponentCard>
+              </div>
+            </TabPane>
+
+            <TabPane tab="Instructor Workload">
+              <div className="space-y-6">
+                {/* Term Filter for Instructor Workload Tab */}
+                <ComponentCard title="Filters">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="workloadTermFilter">Term:</Label>
+                      <div className="relative w-full sm:w-48">
+                        <Select
+                          options={termOptions}
+                          placeholder="Select a term"
+                          onChange={(e) =>
+                            setSelectedWorkloadTermId(
+                              e.target.value ? (e.target.value as Id<'terms'>) : undefined
+                            )
+                          }
+                          defaultValue={selectedWorkloadTermId || ''}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </ComponentCard>
+
+                {/* Instructor Workload */}
+                <InstructorWorkload sessionToken={sessionToken} selectedTermId={workloadEffectiveTermId} />
+              </div>
+            </TabPane>
+          </Tabs>
         </div>
 
         {/* Create Section Modal */}

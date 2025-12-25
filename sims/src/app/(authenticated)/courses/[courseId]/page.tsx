@@ -116,7 +116,7 @@ export default function CourseDetailPage() {
             errorMessage = 'Schedule conflict: This section conflicts with one of your existing enrollments.';
           }
         } else if (fullMessage.includes('Enrollment deadline has passed')) {
-          errorMessage = fullMessage.replace(/.*Enrollment deadline has passed[^:]*:\s*/, 'Enrollment deadline has passed. ');
+          errorMessage = 'The enrollment deadline for this section has passed. Please contact the registrar if you need assistance.';
         } else if (fullMessage.includes('Authentication required')) {
           errorMessage = 'Authentication required. Please log in.';
         } else if (fullMessage.includes('Invalid session token')) {

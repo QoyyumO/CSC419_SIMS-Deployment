@@ -13,16 +13,16 @@ import { GradeValue } from "../aggregates/types";
 /**
  * Converts a numeric score to a letter grade and points
  */
-export function convertScoreToGrade(score: number, maxScore: number): GradeValue {
-  if (score < 0 || score > maxScore) {
+export function convertScoreToGrade(score: number, totalPoints: number): GradeValue {
+  if (score < 0 || score > totalPoints) {
     throw new InvariantViolationError(
       "GradingService",
       "Score Conversion",
-      `Score (${score}) must be between 0 and ${maxScore}`
+      `Score (${score}) must be between 0 and ${totalPoints}`
     );
   }
 
-  const percentage = (score / maxScore) * 100;
+  const percentage = (score / totalPoints) * 100;
 
   let letter: string;
   let points: number;

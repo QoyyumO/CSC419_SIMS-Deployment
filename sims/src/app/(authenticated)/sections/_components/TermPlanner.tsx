@@ -33,11 +33,13 @@ interface TermPlannerProps {
   sessionToken: string | null;
   selectedTermId: Id<'terms'> | undefined;
   onSuccess?: () => void;
+  onCreateSection?: () => void;
 }
 
 export default function TermPlanner({ 
   sessionToken, 
-  onSuccess 
+  onSuccess,
+  onCreateSection
 }: TermPlannerProps) {
   const [selectedTargetTermId, setSelectedTargetTermId] = useState<Id<'terms'> | undefined>(undefined);
   const [selectedSourceTermId, setSelectedSourceTermId] = useState<Id<'terms'> | undefined>(undefined);
@@ -148,6 +150,18 @@ export default function TermPlanner({
   return (
     <ComponentCard title="Term Planner" desc="Bulk operations for section management">
       <div className="space-y-4">
+        {/* Create Section Button */}
+        {onCreateSection && (
+          <div className="flex justify-end pb-2 border-b border-gray-200 dark:border-gray-800">
+            <Button
+              size="sm"
+              startIcon={<PlusIcon />}
+              onClick={onCreateSection}
+            >
+              Create Section
+            </Button>
+          </div>
+        )}
         {successMessage && (
           <Alert variant="success" title="Success" message={successMessage} />
         )}

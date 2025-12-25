@@ -77,7 +77,8 @@ export interface Assessment {
   sectionId: Id<"sections">;
   title: string;
   weight: number;
-  maxScore: number;
+  totalPoints: number;
+  dueDate: number;
 }
 
 // ============================================================================

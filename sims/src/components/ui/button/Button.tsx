@@ -6,7 +6,7 @@ interface ButtonProps {
   variant?: 'primary' | 'outline' | 'text-only' | 'danger' | 'warning'; // Button variant
   startIcon?: ReactNode; // Icon before the text
   endIcon?: ReactNode; // Icon after the text
-  onClick?: () => void; // Click handler
+  onClick?: (e?: React.MouseEvent<HTMLButtonElement>) => void; // Click handler
   disabled?: boolean; // Disabled state
   className?: string; // Custom className
   type?: 'button' | 'submit' | 'reset';

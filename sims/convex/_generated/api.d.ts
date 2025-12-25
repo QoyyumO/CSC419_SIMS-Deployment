@@ -9,12 +9,17 @@
  */
 
 import type * as academicSessions from "../academicSessions.js";
+import type * as assessments from "../assessments.js";
 import type * as auth from "../auth.js";
 import type * as courses from "../courses.js";
+import type * as cron from "../cron.js";
 import type * as dashboard from "../dashboard.js";
 import type * as department from "../department.js";
 import type * as departments from "../departments.js";
+import type * as enrollments from "../enrollments.js";
 import type * as examples_studentMutations from "../examples/studentMutations.js";
+import type * as grades from "../grades.js";
+import type * as instructors from "../instructors.js";
 import type * as lib_aggregates_academicCalendarAggregate from "../lib/aggregates/academicCalendarAggregate.js";
 import type * as lib_aggregates_courseAggregate from "../lib/aggregates/courseAggregate.js";
 import type * as lib_aggregates_enrollmentAggregate from "../lib/aggregates/enrollmentAggregate.js";
@@ -33,6 +38,7 @@ import type * as lib_services_gradingService from "../lib/services/gradingServic
 import type * as lib_services_graduationService from "../lib/services/graduationService.js";
 import type * as lib_services_index from "../lib/services/index.js";
 import type * as lib_services_schedulingService from "../lib/services/schedulingService.js";
+import type * as lib_services_sectionService from "../lib/services/sectionService.js";
 import type * as lib_services_transcriptService from "../lib/services/transcriptService.js";
 import type * as lib_session from "../lib/session.js";
 import type * as mutations_assessmentMutations from "../mutations/assessmentMutations.js";
@@ -55,12 +61,17 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   academicSessions: typeof academicSessions;
+  assessments: typeof assessments;
   auth: typeof auth;
   courses: typeof courses;
+  cron: typeof cron;
   dashboard: typeof dashboard;
   department: typeof department;
   departments: typeof departments;
+  enrollments: typeof enrollments;
   "examples/studentMutations": typeof examples_studentMutations;
+  grades: typeof grades;
+  instructors: typeof instructors;
   "lib/aggregates/academicCalendarAggregate": typeof lib_aggregates_academicCalendarAggregate;
   "lib/aggregates/courseAggregate": typeof lib_aggregates_courseAggregate;
   "lib/aggregates/enrollmentAggregate": typeof lib_aggregates_enrollmentAggregate;
@@ -79,6 +90,7 @@ declare const fullApi: ApiFromModules<{
   "lib/services/graduationService": typeof lib_services_graduationService;
   "lib/services/index": typeof lib_services_index;
   "lib/services/schedulingService": typeof lib_services_schedulingService;
+  "lib/services/sectionService": typeof lib_services_sectionService;
   "lib/services/transcriptService": typeof lib_services_transcriptService;
   "lib/session": typeof lib_session;
   "mutations/assessmentMutations": typeof mutations_assessmentMutations;

@@ -128,6 +128,9 @@ export default defineSchema({
     ),
     enrollmentCount: v.number(),
     isOpenForEnrollment: v.optional(v.boolean()), // Whether section is published and open for student enrollment
+    enrollmentDeadline: v.optional(v.number()), // Unix timestamp for enrollment deadline
+    finalGradesPosted: v.optional(v.boolean()), // Whether final grades have been posted for this section
+    gradesEditable: v.optional(v.boolean()), // Whether grades can be edited (default true, false when final grades posted, can be reopened by registrar)
   })
     .index("by_courseId", ["courseId"])
     .index("by_termId", ["termId"])
@@ -216,8 +219,9 @@ export default defineSchema({
   assessments: defineTable({
     sectionId: v.id("sections"),
     title: v.string(),
-    weight: v.number(),
-    maxScore: v.number(),
+    weight: v.number(), // Weight as percentage (e.g., 30 for 30%)
+    totalPoints: v.number(), // Total points possible for this assessment
+    dueDate: v.number(), // Unix timestamp for due date
   })
     .index("by_sectionId", ["sectionId"]),
 

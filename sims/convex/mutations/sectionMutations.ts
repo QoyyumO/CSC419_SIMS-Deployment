@@ -9,6 +9,7 @@ import { v } from "convex/values";
 import { NotFoundError } from "../lib/errors";
 import { validateCreateSection, validateUpdateSection } from "../lib/aggregates";
 import { logSectionCancelled, logSectionCreated, logSectionUpdated } from "../lib/services/auditLogService";
+import { validateSessionToken } from "../lib/session";
 
 /**
  * Create a new section
@@ -195,6 +196,80 @@ export const cancelSection = mutation({
     return {
       success: true,
       affectedEnrollments: enrollments.length,
+    };
+  },
+});
+
+/**
+ * Toggle grade editing for a section (Registrar only)
+ * 
+ * This operation allows the registrar to reopen grade editing for a section
+ * after final grades have been posted. This is useful for corrections or appeals.
+ * 
+ * This operation:
+ * 1. Validates user is registrar
+ * 2. Validates section exists
+ * 3. Updates gradesEditable field on the section
+ * 4. Creates audit log
+ */
+export const toggleGradeEditing = mutation({
+  args: {
+    sectionId: v.id("sections"),
+    token: v.string(),
+    allowEditing: v.boolean(), // true to allow editing, false to lock
+  },
+  handler: async (ctx, args) => {
+    // Validate session token and get user
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new Error("Invalid session token");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Verify role is registrar or admin
+    if (!user.roles.includes("registrar") && !user.roles.includes("admin")) {
+      throw new Error("Access denied: Registrar or Admin role required");
+    }
+
+    // Get section
+    const section = await ctx.db.get(args.sectionId);
+    if (!section) {
+      throw new NotFoundError("Section", args.sectionId);
+    }
+
+    // Only allow toggling if final grades have been posted
+    if (!section.finalGradesPosted) {
+      throw new Error("Cannot toggle grade editing: Final grades have not been posted for this section");
+    }
+
+    // Update the section
+    await ctx.db.patch(args.sectionId, {
+      gradesEditable: args.allowEditing,
+    });
+
+    // Create audit log
+    await logSectionUpdated(
+      ctx.db,
+      userId,
+      args.sectionId,
+      section.capacity,
+      section.capacity,
+      {
+        courseId: section.courseId,
+        termId: section.termId,
+        gradeEditingToggled: true,
+        previousGradesEditable: section.gradesEditable ?? true,
+        newGradesEditable: args.allowEditing,
+      }
+    );
+
+    return {
+      success: true,
+      gradesEditable: args.allowEditing,
     };
   },
 });

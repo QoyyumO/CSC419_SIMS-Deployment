@@ -8,6 +8,7 @@ interface AlertProps {
   showLink?: boolean; // Whether to show the "Learn More" link
   linkHref?: string; // Link URL
   linkText?: string; // Link text
+  className?: string; // Custom className
 }
 
 const Alert: React.FC<AlertProps> = ({
@@ -17,6 +18,7 @@ const Alert: React.FC<AlertProps> = ({
   showLink = false,
   linkHref = '#',
   linkText = 'Learn more',
+  className = '',
 }) => {
   // Tailwind classes for each variant
   const variantClasses = {
@@ -121,7 +123,7 @@ const Alert: React.FC<AlertProps> = ({
 
   return (
     <div
-      className={`rounded-xl border p-4 ${variantClasses[variant].container}`}
+      className={`rounded-xl border p-4 ${variantClasses[variant].container} ${className}`}
     >
       <div className="flex items-start gap-3">
         <div className={`-mt-0.5 ${variantClasses[variant].icon}`}>

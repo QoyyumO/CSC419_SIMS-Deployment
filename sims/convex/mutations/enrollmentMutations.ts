@@ -16,7 +16,6 @@ import {
   validateEnrollmentDomainChecks,
   checkPrerequisites,
   checkScheduleConflicts,
-  checkEnrollmentDeadline,
 } from "../lib/services/enrollmentService";
 import { logStudentEnrolled, logStudentDropped } from "../lib/services/auditLogService";
 import { validateSessionToken } from "../lib/session";
@@ -155,10 +154,24 @@ export const enroll = mutation({
     }
 
     // Step 3: Business Rule Validations (must be done before capacity check)
-    // 3a. Check enrollment deadline
-    await checkEnrollmentDeadline(ctx.db);
+    // 3a. Check if section is open for enrollment
+    if (!section.isOpenForEnrollment) {
+      throw new Error("This section is not open for enrollment");
+    }
 
-    // 3b. Check prerequisites (using past enrollments with status === 'completed')
+    // 3b. Check section-specific enrollment deadline
+    if (section.enrollmentDeadline) {
+      const now = Date.now();
+      if (now > section.enrollmentDeadline) {
+        // Deadline has passed, update section status and prevent enrollment
+        await ctx.db.patch(args.sectionId, {
+          isOpenForEnrollment: false,
+        });
+        throw new Error("Enrollment deadline has passed for this section");
+      }
+    }
+
+    // 3c. Check prerequisites (using past enrollments with status === 'completed')
     await checkPrerequisites(ctx.db, student._id, section.courseId);
 
     // 3c. Check time conflicts with active enrollments for current term

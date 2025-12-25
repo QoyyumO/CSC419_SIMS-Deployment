@@ -51,6 +51,7 @@ export default function CreateSectionModal({
     termId: "",
     capacity: "",
     details: "",
+    enrollmentDeadline: "",
   });
 
   const [scheduleSlots, setScheduleSlots] = useState<
@@ -63,7 +64,7 @@ export default function CreateSectionModal({
   >([]);
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<{ title: string; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [courseSearchQuery, setCourseSearchQuery] = useState("");
   const [showCourseDropdown, setShowCourseDropdown] = useState(false);
@@ -97,6 +98,7 @@ export default function CreateSectionModal({
         termId: "",
         capacity: "",
         details: "",
+        enrollmentDeadline: "",
       });
       setScheduleSlots([]);
       setValidationErrors({});
@@ -165,7 +167,10 @@ export default function CreateSectionModal({
     }
 
     if (!sessionToken) {
-      setApiError("Session expired. Please log in again.");
+      setApiError({
+        title: "Session Expired",
+        message: "Your session has expired. Please log in again to continue.",
+      });
       return;
     }
 
@@ -183,14 +188,70 @@ export default function CreateSectionModal({
         termId: formData.termId as Id<"terms">,
         capacity: parseInt(formData.capacity, 10),
         details: formData.details || undefined,
+        enrollmentDeadline: formData.enrollmentDeadline
+          ? new Date(formData.enrollmentDeadline).getTime()
+          : undefined,
         scheduleSlots: validScheduleSlots.length > 0 ? validScheduleSlots : undefined,
       });
 
       onSuccess();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create section. Please try again.";
-      setApiError(message);
+      // Parse error message to extract user-friendly message
+      let errorTitle = "Error Creating Section";
+      let errorMessage = "Failed to create section. Please try again.";
+
+      if (error instanceof Error) {
+        const errorStr = error.message;
+
+        // Handle ValidationError format: "Validation error for field 'field': message"
+        if (errorStr.includes("Validation error for field")) {
+          const match = errorStr.match(/Validation error for field '([^']+)': (.+)/);
+          if (match) {
+            const [, field, message] = match;
+            
+            // Map field names to user-friendly labels
+            const fieldLabels: Record<string, string> = {
+              enrollmentDeadline: "Enrollment Deadline",
+              capacity: "Capacity",
+              courseId: "Course",
+              termId: "Term",
+              token: "Authentication",
+            };
+
+            const fieldLabel = fieldLabels[field] || field;
+            errorTitle = "Validation Error";
+            
+            // Make message more user-friendly
+            if (message.includes("cannot be in the past")) {
+              errorMessage = `The ${fieldLabel.toLowerCase()} cannot be set to a date in the past. Please select a future date.`;
+            } else if (message.includes("must be before")) {
+              errorMessage = `The ${fieldLabel.toLowerCase()} must be before the term end date.`;
+            } else if (message.includes("must be greater than 0")) {
+              errorMessage = `${fieldLabel} must be a positive number greater than zero.`;
+            } else if (message.includes("required")) {
+              errorMessage = `${fieldLabel} is required. Please fill in this field.`;
+            } else if (message.includes("does not belong")) {
+              errorMessage = message;
+            } else {
+              errorMessage = `${fieldLabel}: ${message}`;
+            }
+          }
+        } else if (errorStr.includes("Access denied")) {
+          errorTitle = "Access Denied";
+          errorMessage = "You do not have permission to create sections. Please contact your administrator.";
+        } else if (errorStr.includes("Authentication required") || errorStr.includes("Invalid session token")) {
+          errorTitle = "Authentication Error";
+          errorMessage = "Your session has expired. Please log in again to continue.";
+        } else if (errorStr.includes("not found")) {
+          errorTitle = "Not Found";
+          errorMessage = "One or more required resources could not be found. Please refresh the page and try again.";
+        } else {
+          // Try to extract a user-friendly message from other error formats
+          errorMessage = errorStr;
+        }
+      }
+
+      setApiError({ title: errorTitle, message: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -290,7 +351,7 @@ export default function CreateSectionModal({
             <div className="space-y-6">
               {apiError && (
                 <div className="mb-6">
-                  <Alert variant="error" title="Error" message={apiError} />
+                  <Alert variant="error" title={apiError.title} message={apiError.message} />
                 </div>
               )}
 
@@ -397,6 +458,29 @@ export default function CreateSectionModal({
                     {validationErrors.capacity}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <Label htmlFor="enrollmentDeadline">
+                  Enrollment Deadline <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+                </Label>
+                <Input
+                  id="enrollmentDeadline"
+                  type="datetime-local"
+                  value={formData.enrollmentDeadline}
+                  onChange={(e) => handleInputChange("enrollmentDeadline", e.target.value)}
+                  error={!!validationErrors.enrollmentDeadline}
+                  disabled={isLoading}
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+                {validationErrors.enrollmentDeadline && (
+                  <p className="text-error-500 mt-1 text-sm">
+                    {validationErrors.enrollmentDeadline}
+                  </p>
+                )}
+                <p className="text-gray-500 mt-1 text-xs dark:text-gray-400">
+                  Once the deadline passes, enrollment will automatically close for this section.
+                </p>
               </div>
 
               <div>

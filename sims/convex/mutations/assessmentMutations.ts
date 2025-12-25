@@ -8,7 +8,8 @@ import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 import { NotFoundError, InvariantViolationError } from "../lib/errors";
 import { validateAssessmentWeight } from "../lib/aggregates";
-import { logAssessmentCreated, logAssessmentUpdated } from "../lib/services/auditLogService";
+import { logAssessmentCreated, logAssessmentUpdated, logAssessmentDeleted } from "../lib/services/auditLogService";
+import { validateSessionToken } from "../lib/session";
 
 /**
  * Create a new assessment
@@ -18,10 +19,21 @@ export const createAssessment = mutation({
     sectionId: v.id("sections"),
     title: v.string(),
     weight: v.number(),
-    maxScore: v.number(),
-    createdByUserId: v.id("users"),
+    totalPoints: v.number(),
+    dueDate: v.number(), // Unix timestamp
+    token: v.optional(v.string()), // Session token for authentication
   },
   handler: async (ctx, args) => {
+    // Authenticate user
+    if (!args.token) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new Error("Invalid session token");
+    }
+
     // Validate section exists
     const section = await ctx.db.get(args.sectionId);
     if (!section) {
@@ -44,12 +56,12 @@ export const createAssessment = mutation({
       );
     }
 
-    // Validate maxScore is positive
-    if (args.maxScore <= 0) {
+    // Validate totalPoints is positive
+    if (args.totalPoints <= 0) {
       throw new InvariantViolationError(
         "AssessmentMutation",
-        "MaxScore Validation",
-        "Max score must be greater than 0"
+        "TotalPoints Validation",
+        "Total points must be greater than 0"
       );
     }
 
@@ -58,19 +70,21 @@ export const createAssessment = mutation({
       sectionId: args.sectionId,
       title: args.title,
       weight: args.weight,
-      maxScore: args.maxScore,
+      totalPoints: args.totalPoints,
+      dueDate: args.dueDate,
     });
 
     // Create audit log
     await logAssessmentCreated(
       ctx.db,
-      args.createdByUserId,
+      userId,
       assessmentId,
       {
         sectionId: args.sectionId,
         title: args.title,
         weight: args.weight,
-        maxScore: args.maxScore,
+        totalPoints: args.totalPoints,
+        dueDate: args.dueDate,
       }
     );
 
@@ -86,10 +100,20 @@ export const updateAssessment = mutation({
     assessmentId: v.id("assessments"),
     title: v.optional(v.string()),
     weight: v.optional(v.number()),
-    maxScore: v.optional(v.number()),
-    updatedByUserId: v.id("users"),
+    totalPoints: v.optional(v.number()),
+    dueDate: v.optional(v.number()),
+    token: v.optional(v.string()), // Session token for authentication
   },
   handler: async (ctx, args) => {
+    // Authenticate user
+    if (!args.token) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new Error("Invalid session token");
+    }
     // Get current assessment to capture previous values
     const assessment = await ctx.db.get(args.assessmentId);
     if (!assessment) {
@@ -114,12 +138,12 @@ export const updateAssessment = mutation({
       }
     }
 
-    // Validate maxScore if being updated
-    if (args.maxScore !== undefined && args.maxScore <= 0) {
+    // Validate totalPoints if being updated
+    if (args.totalPoints !== undefined && args.totalPoints <= 0) {
       throw new InvariantViolationError(
         "AssessmentMutation",
-        "MaxScore Validation",
-        "Max score must be greater than 0"
+        "TotalPoints Validation",
+        "Total points must be greater than 0"
       );
     }
 
@@ -127,12 +151,14 @@ export const updateAssessment = mutation({
     const updates: {
       title?: string;
       weight?: number;
-      maxScore?: number;
+      totalPoints?: number;
+      dueDate?: number;
     } = {};
 
     if (args.title !== undefined) updates.title = args.title;
     if (args.weight !== undefined) updates.weight = args.weight;
-    if (args.maxScore !== undefined) updates.maxScore = args.maxScore;
+    if (args.totalPoints !== undefined) updates.totalPoints = args.totalPoints;
+    if (args.dueDate !== undefined) updates.dueDate = args.dueDate;
 
     // Update the assessment
     await ctx.db.patch(args.assessmentId, updates);
@@ -140,7 +166,7 @@ export const updateAssessment = mutation({
     // Create audit log
     await logAssessmentUpdated(
       ctx.db,
-      args.updatedByUserId,
+      userId,
       args.assessmentId,
       {
         sectionId: assessment.sectionId,
@@ -148,10 +174,72 @@ export const updateAssessment = mutation({
         newTitle: args.title ?? assessment.title,
         previousWeight: assessment.weight,
         newWeight: args.weight ?? assessment.weight,
-        previousMaxScore: assessment.maxScore,
-        newMaxScore: args.maxScore ?? assessment.maxScore,
+        previousTotalPoints: assessment.totalPoints,
+        newTotalPoints: args.totalPoints ?? assessment.totalPoints,
+        previousDueDate: assessment.dueDate,
+        newDueDate: args.dueDate ?? assessment.dueDate,
       }
     );
+
+    return { success: true };
+  },
+});
+
+/**
+ * Delete an assessment
+ */
+export const deleteAssessment = mutation({
+  args: {
+    assessmentId: v.id("assessments"),
+    token: v.optional(v.string()), // Session token for authentication
+  },
+  handler: async (ctx, args) => {
+    // Authenticate user
+    if (!args.token) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new Error("Invalid session token");
+    }
+
+    // Get assessment to capture details before deletion
+    const assessment = await ctx.db.get(args.assessmentId);
+    if (!assessment) {
+      throw new NotFoundError("Assessment", args.assessmentId);
+    }
+
+    // Check if there are any grades for this assessment
+    const grades = await ctx.db
+      .query("grades")
+      .withIndex("by_assessmentId", (q) => q.eq("assessmentId", args.assessmentId))
+      .collect();
+
+    if (grades.length > 0) {
+      throw new InvariantViolationError(
+        "AssessmentMutation",
+        "Delete Validation",
+        `Cannot delete assessment: ${grades.length} grade(s) have been recorded for this assessment`
+      );
+    }
+
+    // Create audit log before deletion
+    await logAssessmentDeleted(
+      ctx.db,
+      userId,
+      args.assessmentId,
+      {
+        sectionId: assessment.sectionId,
+        title: assessment.title,
+        weight: assessment.weight,
+        totalPoints: assessment.totalPoints,
+        dueDate: assessment.dueDate,
+      }
+    );
+
+    // Delete the assessment
+    await ctx.db.delete(args.assessmentId);
 
     return { success: true };
   },

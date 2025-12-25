@@ -339,6 +339,22 @@ export async function logAssessmentUpdated(
   );
 }
 
+export async function logAssessmentDeleted(
+  db: DatabaseWriter,
+  userId: Id<"users">,
+  assessmentId: Id<"assessments">,
+  details?: Record<string, unknown>
+): Promise<Id<"auditLogs">> {
+  return createAuditLog(
+    db,
+    "assessment",
+    "AssessmentDeleted",
+    userId,
+    assessmentId,
+    details
+  );
+}
+
 export async function logTranscriptGenerated(
   db: DatabaseWriter,
   userId: Id<"users">,

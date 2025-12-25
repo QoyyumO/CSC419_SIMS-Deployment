@@ -206,6 +206,10 @@ export const getSections = query({
       sections = sections.filter((section) => section.termId === args.termId);
     }
 
+    // Check enrollment status based on deadlines (compute effective status without patching)
+    // The cron job and enrollment mutation will handle actual database updates
+    const now = Date.now();
+
     // Enrich sections with course and instructor information
     const sectionsWithDetails = await Promise.all(
       sections.map(async (section) => {
@@ -250,6 +254,15 @@ export const getSections = query({
         // Get session information
         const session = term ? await ctx.db.get(term.sessionId) : null;
 
+        // Compute effective enrollment status (check if deadline has passed)
+        let effectiveIsOpenForEnrollment = section.isOpenForEnrollment ?? false;
+        if (effectiveIsOpenForEnrollment && section.enrollmentDeadline) {
+          if (now > section.enrollmentDeadline) {
+            // Deadline has passed, effectively closed (cron job will update DB)
+            effectiveIsOpenForEnrollment = false;
+          }
+        }
+
         return {
           _id: section._id,
           courseCode: course?.code || "Unknown",
@@ -263,7 +276,7 @@ export const getSections = query({
           termId: section.termId,
           termName: term?.name || "Unknown",
           sessionYearLabel: session?.yearLabel || "Unknown",
-          isOpenForEnrollment: section.isOpenForEnrollment ?? false,
+          isOpenForEnrollment: effectiveIsOpenForEnrollment,
         };
       })
     );
@@ -284,6 +297,7 @@ export const createSection = mutation({
     capacity: v.number(),
     details: v.optional(v.string()),
     instructorId: v.optional(v.id("users")),
+    enrollmentDeadline: v.optional(v.number()), // Unix timestamp for enrollment deadline
     scheduleSlots: v.optional(
       v.array(
         v.object({
@@ -356,6 +370,24 @@ export const createSection = mutation({
       throw new ValidationError("capacity", "Capacity must be greater than 0");
     }
 
+    // Validate enrollment deadline if provided
+    if (args.enrollmentDeadline !== undefined) {
+      const now = Date.now();
+      if (args.enrollmentDeadline < now) {
+        throw new ValidationError(
+          "enrollmentDeadline",
+          "Enrollment deadline cannot be in the past"
+        );
+      }
+      // Ensure deadline is before term end date
+      if (args.enrollmentDeadline > term.endDate) {
+        throw new ValidationError(
+          "enrollmentDeadline",
+          "Enrollment deadline must be before the term end date"
+        );
+      }
+    }
+
     // Use provided instructorId or use department head as placeholder
     // The schema requires instructorId, so we use a placeholder if not provided
     // This section will show as "Unassigned" until an instructor is assigned
@@ -384,6 +416,7 @@ export const createSection = mutation({
       scheduleSlots: args.scheduleSlots || [], // Use provided schedule slots or empty array
       enrollmentCount: 0,
       isOpenForEnrollment: false, // New sections start as Draft
+      enrollmentDeadline: args.enrollmentDeadline,
     });
 
     return { success: true, sectionId };
