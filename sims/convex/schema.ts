@@ -228,18 +228,14 @@ export default defineSchema({
   /**
    * Grades Collection
    * Represents individual grades for assessments
-   * Uses GradeValue value object
+   * Stores numeric score only (percentage 0-100)
+   * Letter grade mapping happens in transcript service
    * Foreign Keys: enrollmentId → enrollments._id, assessmentId → assessments._id, recordedBy → users._id
    */
   grades: defineTable({
     enrollmentId: v.id("enrollments"),
     assessmentId: v.id("assessments"),
-    grade: v.object({
-      // GradeValue value object
-      numeric: v.number(),
-      letter: v.string(),
-      points: v.number(),
-    }),
+    grade: v.number(), // Numeric grade (percentage 0-100)
     recordedBy: v.id("users"),
   })
     .index("by_enrollmentId", ["enrollmentId"])
@@ -366,13 +362,14 @@ export default defineSchema({
   /**
    * Notifications Collection
    * Represents user notifications
-   * Foreign Keys: userId → users._id
+   * Foreign Keys: userId → users._id, courseId → courses._id (optional, for grade notifications)
    */
   notifications: defineTable({
     userId: v.id("users"),
     message: v.string(),
     read: v.boolean(),
     createdAt: v.number(), // Unix timestamp
+    courseId: v.optional(v.id("courses")), // Optional course ID for navigation (e.g., grade notifications)
   })
     .index("by_userId", ["userId"])
     .index("by_userId_read", ["userId", "read"])

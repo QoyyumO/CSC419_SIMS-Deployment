@@ -97,7 +97,7 @@ export async function createTranscriptEntry(
       );
     }
 
-    const assessmentPercentage = (grade.grade.numeric / 100) * assessment.weight;
+    const assessmentPercentage = (grade.grade / 100) * assessment.weight;
     totalWeightedPoints += assessmentPercentage;
     totalWeight += assessment.weight;
   }
@@ -128,24 +128,38 @@ export async function createTranscriptEntry(
 }
 
 /**
- * Converts percentage to letter grade
+ * Converts percentage to letter grade using the standard mapping:
+ * 70-100: A (5.0)
+ * 60-69.99: B (4.0)
+ * 50-59.99: C (3.0)
+ * 45-49.99: D (2.0)
+ * 40-44.99: E (1.0)
+ * 0-39.99: F (0.0)
  */
 function convertPercentageToLetter(percentage: number): string {
-  if (percentage >= 90) return "A";
-  if (percentage >= 80) return "B";
-  if (percentage >= 70) return "C";
-  if (percentage >= 60) return "D";
+  if (percentage >= 70) return "A";
+  if (percentage >= 60) return "B";
+  if (percentage >= 50) return "C";
+  if (percentage >= 45) return "D";
+  if (percentage >= 40) return "E";
   return "F";
 }
 
 /**
- * Converts percentage to grade points
+ * Converts percentage to grade points using the standard mapping:
+ * 70-100: A (5.0)
+ * 60-69.99: B (4.0)
+ * 50-59.99: C (3.0)
+ * 45-49.99: D (2.0)
+ * 40-44.99: E (1.0)
+ * 0-39.99: F (0.0)
  */
 function convertPercentageToPoints(percentage: number): number {
-  if (percentage >= 90) return 4.0;
-  if (percentage >= 80) return 3.0;
-  if (percentage >= 70) return 2.0;
-  if (percentage >= 60) return 1.0;
+  if (percentage >= 70) return 5.0;
+  if (percentage >= 60) return 4.0;
+  if (percentage >= 50) return 3.0;
+  if (percentage >= 45) return 2.0;
+  if (percentage >= 40) return 1.0;
   return 0.0;
 }
 

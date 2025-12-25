@@ -13,11 +13,10 @@ import { GradeValue } from "../lib/aggregates/types";
 import { validateSessionToken } from "../lib/session";
 
 /**
- * Converts a numeric score to a letter grade and points
+ * Converts percentage to GradeValue for audit log purposes only
+ * This is not stored in the database, only used for logging
  */
-function calculateGradeValue(score: number, totalPoints: number): GradeValue {
-  const percentage = (score / totalPoints) * 100;
-
+function calculateGradeValueForAudit(percentage: number): GradeValue {
   let letter: string;
   let points: number;
 
@@ -43,6 +42,15 @@ function calculateGradeValue(score: number, totalPoints: number): GradeValue {
     letter,
     points,
   };
+}
+
+/**
+ * Calculates percentage from score and total points
+ * Grades table stores only numeric percentage (0-100)
+ * Letter grade mapping happens in transcript service
+ */
+function calculatePercentage(score: number, totalPoints: number): number {
+  return (score / totalPoints) * 100;
 }
 
 /**
@@ -111,8 +119,9 @@ export const recordGrade = mutation({
       );
     }
 
-    // Calculate grade value
-    const gradeValue = calculateGradeValue(args.score, assessment.totalPoints);
+    // Calculate percentage (0-100)
+    const percentage = calculatePercentage(args.score, assessment.totalPoints);
+    const roundedPercentage = Math.round(percentage * 100) / 100;
 
     // Step 3: Create or update grade document
     // Check if grade already exists
@@ -124,12 +133,13 @@ export const recordGrade = mutation({
       .collect();
 
     let gradeId: Id<"grades">;
+    const previousPercentage = existingGrades.length > 0 ? existingGrades[0].grade : null;
 
     if (existingGrades.length > 0) {
       // Update existing grade
       const existingGrade = existingGrades[0];
       await ctx.db.patch(existingGrade._id, {
-        grade: gradeValue,
+        grade: roundedPercentage,
         recordedBy: args.recordedByUserId,
       });
       gradeId = existingGrade._id;
@@ -138,28 +148,30 @@ export const recordGrade = mutation({
       gradeId = await ctx.db.insert("grades", {
         enrollmentId: args.enrollmentId,
         assessmentId: args.assessmentId,
-        grade: gradeValue,
+        grade: roundedPercentage,
         recordedBy: args.recordedByUserId,
       });
     }
 
     // Step 4: Create audit log entry
+    // For audit logs, we still calculate letter grade for display purposes
+    const gradeValue = calculateGradeValueForAudit(roundedPercentage);
     if (existingGrades.length > 0) {
       // Grade was edited
-      const previousGrade = existingGrades[0].grade.letter;
+      const previousGradeValue = previousPercentage !== null ? calculateGradeValueForAudit(previousPercentage) : null;
       await logGradeEdited(
         ctx.db,
         args.recordedByUserId,
         gradeId,
-        previousGrade,
+        previousGradeValue?.letter || "N/A",
         gradeValue.letter,
         {
           enrollmentId: args.enrollmentId,
           assessmentId: args.assessmentId,
           score: args.score,
           totalPoints: assessment.totalPoints,
-          previousScore: existingGrades[0].grade.numeric,
-          newScore: gradeValue.numeric,
+          previousScore: previousPercentage || 0,
+          newScore: roundedPercentage,
         }
       );
     } else {
@@ -183,7 +195,7 @@ export const recordGrade = mutation({
     return {
       success: true,
       gradeId,
-      gradeValue,
+      percentage: roundedPercentage,
     };
   },
 });
@@ -236,7 +248,7 @@ export const recordFinalGrade = mutation({
         );
       }
 
-      const assessmentPercentage = (grade.grade.numeric / 100) * assessment.weight;
+      const assessmentPercentage = (grade.grade / 100) * assessment.weight;
       totalWeightedPoints += assessmentPercentage;
       totalWeight += assessment.weight;
     }
@@ -251,7 +263,7 @@ export const recordFinalGrade = mutation({
     }
 
     const finalPercentage = totalWeightedPoints;
-    const finalGradeValue = calculateGradeValue(finalPercentage, 100);
+    const finalGradeValue = calculateGradeValueForAudit(finalPercentage);
 
     // Update enrollment status to completed
     await ctx.db.patch(args.enrollmentId, {
@@ -372,8 +384,9 @@ export const updateGrades = mutation({
           );
         }
 
-        // Calculate grade value from score
-        const gradeValue = calculateGradeValue(gradeInput.score, assessment.totalPoints);
+        // Calculate percentage (0-100)
+        const percentage = calculatePercentage(gradeInput.score, assessment.totalPoints);
+        const roundedPercentage = Math.round(percentage * 100) / 100;
 
         // Check if grade already exists
         const existingGrades = await ctx.db
@@ -385,12 +398,13 @@ export const updateGrades = mutation({
 
         let gradeId: Id<"grades">;
         const isUpdate = existingGrades.length > 0;
+        const previousPercentage = existingGrades.length > 0 ? existingGrades[0].grade : null;
 
         if (isUpdate) {
           // Update existing grade
           const existingGrade = existingGrades[0];
           await ctx.db.patch(existingGrade._id, {
-            grade: gradeValue,
+            grade: roundedPercentage,
             recordedBy: userId,
           });
           gradeId = existingGrade._id;
@@ -399,27 +413,28 @@ export const updateGrades = mutation({
           gradeId = await ctx.db.insert("grades", {
             enrollmentId: gradeInput.enrollmentId,
             assessmentId: gradeInput.assessmentId,
-            grade: gradeValue,
+            grade: roundedPercentage,
             recordedBy: userId,
           });
         }
 
         // Create audit log entry
+        const gradeValue = calculateGradeValueForAudit(roundedPercentage);
         if (isUpdate) {
-          const previousGrade = existingGrades[0].grade.letter;
+          const previousGradeValue = previousPercentage !== null ? calculateGradeValueForAudit(previousPercentage) : null;
           await logGradeEdited(
             ctx.db,
             userId,
             gradeId,
-            previousGrade,
+            previousGradeValue?.letter || "N/A",
             gradeValue.letter,
             {
               enrollmentId: gradeInput.enrollmentId,
               assessmentId: gradeInput.assessmentId,
               score: gradeInput.score,
               totalPoints: assessment.totalPoints,
-              previousScore: existingGrades[0].grade.numeric,
-              newScore: gradeValue.numeric,
+              previousScore: previousPercentage || 0,
+              newScore: roundedPercentage,
             }
           );
         } else {
@@ -437,6 +452,24 @@ export const updateGrades = mutation({
               sectionId: section._id,
             }
           );
+
+          // Create notification for the student when a new grade is posted
+          // Get course information
+          const course = await ctx.db.get(section.courseId);
+          if (course) {
+            // Get student's userId
+            const student = await ctx.db.get(enrollment.studentId);
+            if (student) {
+              // Create notification
+              await ctx.db.insert("notifications", {
+                userId: student.userId,
+                message: `New grade posted for ${course.title}: ${assessment.title}`,
+                read: false,
+                createdAt: Date.now(),
+                courseId: course._id,
+              });
+            }
+          }
         }
 
         return {

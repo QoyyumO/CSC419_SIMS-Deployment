@@ -10,6 +10,7 @@ import { Id } from "./_generated/dataModel";
 import { InvariantViolationError, NotFoundError } from "./lib/errors";
 import { validateSessionToken } from "./lib/session";
 import { GradeValue } from "./lib/aggregates/types";
+import { addEnrollmentToTranscript } from "./lib/services/transcriptService";
 
 /**
  * Converts percentage to letter grade and grade point using the new mapping:
@@ -168,8 +169,8 @@ export const postFinalGrade = mutation({
           }
 
           // Calculate contribution: (score / totalPoints) * weight
-          // grade.grade.numeric is already a percentage, so we use it directly
-          const assessmentPercentage = (grade.grade.numeric / 100) * assessment.weight;
+          // grade.grade is already a percentage, so we use it directly
+          const assessmentPercentage = (grade.grade / 100) * assessment.weight;
           totalWeightedPoints += assessmentPercentage;
         }
 
@@ -193,6 +194,50 @@ export const postFinalGrade = mutation({
           grade: finalGrade.letter, // Store letter grade as string
           status: "completed",
         });
+
+        // Get term and session information for transcript entry
+        const term = await ctx.db.get(enrollment.termId);
+        if (!term) {
+          throw new NotFoundError("Term", enrollment.termId);
+        }
+
+        const session = await ctx.db.get(enrollment.sessionId);
+        if (!session) {
+          throw new NotFoundError("Academic Session", enrollment.sessionId);
+        }
+
+        // Extract year from session yearLabel (e.g., "2024/2025" -> 2024)
+        const yearMatch = session.yearLabel.match(/^(\d{4})/);
+        const year = yearMatch ? parseInt(yearMatch[1], 10) : new Date(term.startDate).getFullYear();
+        const termName = term.name;
+
+        // Get or create transcript for the student
+        let transcript = await ctx.db
+          .query("transcripts")
+          .withIndex("by_studentId", (q) => q.eq("studentId", enrollment.studentId))
+          .first();
+
+        if (!transcript) {
+          // Create new transcript if it doesn't exist
+          const transcriptId = await ctx.db.insert("transcripts", {
+            studentId: enrollment.studentId,
+            entries: [],
+            gpa: 0,
+          });
+          transcript = await ctx.db.get(transcriptId);
+          if (!transcript) {
+            throw new Error("Failed to create transcript");
+          }
+        }
+
+        // Add enrollment to transcript
+        await addEnrollmentToTranscript(
+          ctx.db,
+          transcript._id,
+          enrollment._id,
+          termName,
+          year
+        );
 
         results.push({
           enrollmentId: enrollment._id,

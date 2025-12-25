@@ -69,10 +69,47 @@ export default function StudentDashboardView() {
     sessionToken ? { token: sessionToken } : "skip"
   ) as StudentStats | undefined;
 
+  // Fetch transcript data to get the official GPA from transcript table
+  const transcriptData = useQuery(
+    api.transcript.getFullHistory,
+    sessionToken ? { token: sessionToken } : "skip"
+  ) as {
+    cumulativeGPA: number;
+    groupedData: Record<string, Array<{
+      courseCode: string;
+      courseTitle: string;
+      credits: number;
+      grade: {
+        percentage: number;
+        letter: string;
+        points: number;
+      };
+    }>>;
+    termGPAs: Record<string, number>;
+    studentInfo: {
+      studentNumber: string;
+      name: string;
+      departmentId: string;
+      departmentName: string;
+    };
+  } | undefined | Error;
+
   // @ts-expect-error - Convex API path with slashes
   const dropCourseMutation = useMutation(api["mutations/enrollmentMutations"].dropCourse);
 
-  const isLoading = stats === undefined;
+  const isLoading = stats === undefined || transcriptData === undefined;
+  
+  // Use GPA from transcript table (official GPA) instead of calculated GPA from stats
+  const officialGPA = transcriptData && !(transcriptData instanceof Error) 
+    ? transcriptData.cumulativeGPA 
+    : (stats?.academicStats.gpa ?? 0);
+  
+  // Calculate total credits from transcript entries for more accurate description
+  const transcriptTotalCredits = transcriptData && !(transcriptData instanceof Error) && transcriptData.groupedData
+    ? Object.values(transcriptData.groupedData).reduce((total, termEntries) => {
+        return total + termEntries.reduce((termTotal, entry) => termTotal + entry.credits, 0);
+      }, 0)
+    : stats?.academicStats.totalCredits ?? 0;
 
   // Format GPA to 2 decimal places
   const formatGPA = (gpa: number) => {
@@ -220,11 +257,11 @@ export default function StudentDashboardView() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               title="GPA"
-              value={formatGPA(stats.academicStats.gpa)}
+              value={formatGPA(officialGPA)}
               icon={<PieChartIcon className="h-6 w-6 text-brand-500" />}
               description={
-                stats.academicStats.totalCredits > 0
-                  ? `Based on ${stats.academicStats.totalCredits} credits`
+                transcriptTotalCredits > 0
+                  ? `Official GPA from transcript (${transcriptTotalCredits} credits)`
                   : "No completed courses yet"
               }
             />

@@ -112,7 +112,7 @@ export async function computeFinalGrade(
     }
 
     // Calculate contribution: (grade percentage / 100) * weight
-    const assessmentPercentage = (grade.grade.numeric / 100) * assessment.weight;
+    const assessmentPercentage = (grade.grade / 100) * assessment.weight;
     totalWeightedPoints += assessmentPercentage;
   }
 

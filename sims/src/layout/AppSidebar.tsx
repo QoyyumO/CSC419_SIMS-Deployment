@@ -16,6 +16,7 @@ import {
   UserIcon,
   FileIcon,
   CalenderIcon,
+  DocsIcon,
 } from '../icons';
 
 type NavItem = {
@@ -52,6 +53,11 @@ const AppSidebar: React.FC = () => {
             icon: <PencilIcon />,
             name: 'Grades',
             path: '/grades',
+          },
+          {
+            icon: <DocsIcon />,
+            name: 'Transcript',
+            path: '/transcript',
           },
         ]
       : []),

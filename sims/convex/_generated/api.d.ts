@@ -49,8 +49,10 @@ import type * as mutations_graduationMutations from "../mutations/graduationMuta
 import type * as mutations_sectionMutations from "../mutations/sectionMutations.js";
 import type * as mutations_transcriptMutations from "../mutations/transcriptMutations.js";
 import type * as mutations_userMutations from "../mutations/userMutations.js";
+import type * as notifications from "../notifications.js";
 import type * as programs from "../programs.js";
 import type * as schools from "../schools.js";
+import type * as transcript from "../transcript.js";
 import type * as users from "../users.js";
 
 import type {
@@ -101,8 +103,10 @@ declare const fullApi: ApiFromModules<{
   "mutations/sectionMutations": typeof mutations_sectionMutations;
   "mutations/transcriptMutations": typeof mutations_transcriptMutations;
   "mutations/userMutations": typeof mutations_userMutations;
+  notifications: typeof notifications;
   programs: typeof programs;
   schools: typeof schools;
+  transcript: typeof transcript;
   users: typeof users;
 }>;
 
