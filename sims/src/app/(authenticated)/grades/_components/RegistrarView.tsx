@@ -125,14 +125,14 @@ export default function RegistrarView({ sessionToken }: RegistrarViewProps) {
   // Calculate overview stats for registrar view (based on filtered sections)
   const overviewStats = useMemo(() => {
     if (!Array.isArray(filteredSections)) {
-      return { totalSections: 0, gradesSubmitted: 0, pendingSubmission: 0 };
+      return { totalSections: 0, lockedSections: 0, pendingSubmission: 0 };
     }
 
     const totalSections = filteredSections.length;
-    const gradesSubmitted = filteredSections.filter((s) => s.gradeStatus === "Grades Submitted").length;
+    const lockedSections = filteredSections.filter((s) => s.gradeStatus === "Locked").length;
     const pendingSubmission = filteredSections.filter((s) => s.gradeStatus === "Pending").length;
 
-    return { totalSections, gradesSubmitted, pendingSubmission };
+    return { totalSections, lockedSections, pendingSubmission };
   }, [filteredSections]);
 
   // Handle send reminder
@@ -267,14 +267,14 @@ export default function RegistrarView({ sessionToken }: RegistrarViewProps) {
             description="All sections in the system"
           />
           <MetricCard
-            title="Grades Submitted"
-            value={overviewStats.gradesSubmitted}
-            description="Sections with grades submitted"
+            title="Locked Sections"
+            value={overviewStats.lockedSections}
+            description="Sections with submitted grades (locked)"
           />
           <MetricCard
             title="Pending Submission"
             value={overviewStats.pendingSubmission}
-            description="Sections awaiting grade submission"
+            description="Sections awaiting or open for grade submission"
           />
         </div>
 

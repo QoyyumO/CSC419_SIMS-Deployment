@@ -120,14 +120,24 @@ export const getAllSectionsStatus = query({
           : 0;
 
         // Determine grade status
+        // Locked = sections with submitted grades that are locked (isLocked=true OR finalGradesPosted=true with gradesEditable=false)
+        // Pending = sections that are not locked (including unlocked sections that were previously submitted)
+        // Grades Submitted = sections with submitted grades that are not locked and not editable (transitional state)
         let gradeStatus: "Grades Submitted" | "Pending" | "Locked";
         if (section.isLocked === true) {
+          // Section is explicitly locked
           gradeStatus = "Locked";
         } else if (section.finalGradesPosted && section.gradesEditable === false) {
+          // Grades posted but not editable (locked state)
           gradeStatus = "Locked";
+        } else if (section.finalGradesPosted && section.gradesEditable === true) {
+          // Unlocked section with submitted grades - show as Pending (open for editing)
+          gradeStatus = "Pending";
         } else if (section.finalGradesPosted) {
+          // Grades posted but gradesEditable is undefined/null - treat as submitted but not yet locked
           gradeStatus = "Grades Submitted";
         } else {
+          // No grades posted yet
           gradeStatus = "Pending";
         }
 
