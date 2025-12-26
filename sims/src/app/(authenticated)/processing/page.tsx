@@ -98,7 +98,7 @@ export default function ProcessingPage() {
           errorMessage = `Cannot process term end:${userMessageMatch[1].trim()}`;
         } else {
           // Fallback: Remove technical prefixes and stack traces
-          let cleanedMessage = rawMessage
+          const cleanedMessage = rawMessage
             .replace(/\[CONVEX[^\]]+\]\s*/g, '')
             .replace(/\[Request ID:[^\]]+\]\s*/g, '')
             .replace(/Server Error\s*/g, '')
