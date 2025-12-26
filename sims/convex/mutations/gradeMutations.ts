@@ -83,6 +83,11 @@ export const recordGrade = mutation({
       throw new NotFoundError("Section", enrollment.sectionId);
     }
 
+    // Check if section is locked
+    if (section.isLocked === true) {
+      throw new Error("Grading is closed for this section.");
+    }
+
     // Check if grades are editable (final grades posted and not reopened by registrar)
     if (section.finalGradesPosted && section.gradesEditable === false) {
       throw new Error("Grades cannot be edited. Final grades have been posted for this section. Please contact the registrar if you need to make changes.");
@@ -346,6 +351,11 @@ export const updateGrades = mutation({
 
         if (section.instructorId !== userId) {
           throw new Error("Access denied: You can only update grades for your own sections");
+        }
+
+        // Check if section is locked
+        if (section.isLocked === true) {
+          throw new Error("Grading is closed for this section.");
         }
 
         // Check if grades are editable (final grades posted and not reopened by registrar)

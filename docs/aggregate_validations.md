@@ -122,6 +122,8 @@ export const createStudent = mutation({
 - `validateCoursePrerequisites(db, prerequisites)`
 - `validateNoCircularPrerequisites(courseId, prerequisites)`
 - `validateCreditValue(credits)`
+- `validateCourseStatus(status)` - Validates course status is "C", "R", or "E"
+- `isRequiredCourse(status)` - Checks if course status is required (C or R)
 - `getCoursesUsingAsPrerequisite(db, courseId)`
 
 ### Section Aggregate
@@ -132,7 +134,8 @@ export const createStudent = mutation({
 - `validateCapacityUpdate(currentEnrollmentCount, newCapacity)`
 - `validateAssessmentWeights(db, sectionId, excludeAssessmentId?)`
 - `validateAssessmentWeight(db, sectionId, newWeight, excludeAssessmentId?)`
-- `validateNoOverlappingSlots(slots)`
+- `validateScheduleSlot(slot)` - Validates a single schedule slot
+- `validateNoOverlappingSlots(slots)` - Validates no overlapping schedule slots
 - `validateInstructorRole(db, instructorId)`
 
 ### Student Aggregate
@@ -151,47 +154,48 @@ export const createStudent = mutation({
 - `validateUniqueEnrollment(db, studentId, sectionId, excludeId?)`
 - `validateEnrollmentReferences(db, studentId, sectionId)`
 - `validateTermConsistency(db, sectionId, termId)`
+- `validateEnrollmentStatus(status)` - Validates enrollment status is valid
 - `validateStatusChange(db, enrollment, newStatus, requireAppeal?)`
-- `hasFinalGrade(db, enrollmentId)`
+- `hasFinalGrade(db, enrollmentId)` - Checks if enrollment has a final grade
 
 ### User Aggregate
 - `validateCreateUser(db, username, hashedPassword, roles, profile)`
 - `validateUpdateUser(db, userId, username?, hashedPassword?, roles?, profile?)`
 - `validatePasswordChange(newHashedPassword)`
-- `validateUsernameUniqueness(db, username, excludeId?)`
+- `validateEmailUniqueness(db, email, excludeId?)` - Validates email uniqueness (note: uses email, not username)
 - `validatePasswordIsHashed(hashedPassword)`
-- `validateRoles(roles)`
-- `validateProfile(profile)`
-- `validateRoleConsistency(db, userId, roles)`
+- `validateRoles(roles)` - Validates roles are from allowed set
+- `validateProfile(profile)` - Validates profile structure
+- `validateRoleConsistency(db, userId, roles)` - Validates role consistency with user's other records
 
 ### Transcript Aggregate
 - `validateCreateTranscript(db, studentId, entries, gpa, metadata?)`
 - `validateAddTranscriptEntry(db, transcriptId, newEntry)`
-- `recalculateAndValidateGPA(db, transcriptId)`
-- `calculateGPA(entries)`
-- `validateGPA(transcript)`
-- `validateTranscriptEntry(entry)`
-- `validateTranscriptStudent(db, studentId)`
-- `validateMetadata(db, metadata?)`
+- `recalculateAndValidateGPA(db, transcriptId)` - Recalculates and validates GPA matches entries
+- `calculateGPA(entries)` - Calculates GPA from transcript entries
+- `validateGPA(transcript)` - Validates GPA matches calculated value from entries
+- `validateTranscriptEntry(entry)` - Validates transcript entry structure
+- `validateTranscriptStudent(db, studentId)` - Validates student exists
+- `validateMetadata(db, metadata?)` - Validates transcript metadata
 
 ### Academic Calendar Aggregate
 - `validateCreateAcademicSession(db, label)`
 - `validateUpdateAcademicSession(db, sessionId, label?)`
 - `validateCreateTerm(db, sessionId, name, startDate, endDate)`
 - `validateUpdateTerm(db, termId, startDate?, endDate?)`
-- `validateSessionLabelUniqueness(db, label, excludeId?)`
-- `validateTermSession(db, sessionId)`
-- `validateTermDates(startDate, endDate)`
-- `validateNoOverlappingTerms(db, sessionId, termStartDate, termEndDate, excludeTermId?)`
+- `validateSessionYearLabelUniqueness(db, label, excludeId?)` - Validates session year label uniqueness
+- `validateTermSession(db, sessionId)` - Validates term belongs to session
+- `validateTermDates(startDate, endDate)` - Validates term dates (startDate < endDate)
+- `validateNoOverlappingTerms(db, sessionId, termStartDate, termEndDate, excludeTermId?)` - Validates no overlapping terms in same session
 
 ### Graduation Aggregate
 - `validateCreateGraduation(db, studentId, approvedBy, date, checkRequirements?)`
 - `validateUpdateGraduation(db, graduationId, approvedBy?, date?)`
-- `validateApproverAuthority(db, approverId)`
-- `validateGraduationStudent(db, studentId)`
-- `validateGraduationDate(date)`
-- `validateProgramRequirements(db, studentId)`
-- `validateNoDuplicateGraduation(db, studentId, excludeId?)`
+- `validateApproverAuthority(db, approverId)` - Validates approver has required role (registrar, admin, or department_head)
+- `validateGraduationStudent(db, studentId)` - Validates student exists and can graduate
+- `validateGraduationDate(date)` - Validates graduation date is valid
+- `validateGraduationRequirements(db, studentId)` - Validates all graduation requirements are met
+- `validateNoDuplicateGraduation(db, studentId, excludeId?)` - Validates no duplicate graduation records
 
 ## Error Types
 

@@ -57,22 +57,21 @@ The schema is defined using Convex's schema definition system, which provides ty
 
 **Fields:**
 - `departmentId` (Id<"departments">) - Foreign key to the department offering this program
-- `code` (string) - Unique program code
 - `name` (string) - Name of the program
-- `requirements` (any) - Flexible object structure for program requirements (e.g., minCredits, minGPA, requiredCourses)
+- `durationYears` (number) - Duration of the program in years
+- `creditRequirements` (number) - Total credit hours required for the program
+- `requiredCourses` (array of Id<"courses">) - Array of course IDs that are required for the program
 
 **Indexes:**
 - `by_departmentId` - Index on `departmentId` for querying programs by department
-- `by_code` - Index on `code` for unique lookups
+- `by_name` - Index on `name` for lookups
 
 **Foreign Key Relationships:**
 - `departmentId` → `departments._id`
 
-**Aggregate Root:** Yes (ProgramAggregate)
-
 **Related Collections:**
-- References: `departments`
-- Referenced by: `students.programId`
+- References: `departments`, `courses` (via requiredCourses array)
+- Referenced by: `courses.programIds` (many-to-many relationship)
 
 ---
 
@@ -85,16 +84,28 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `title` (string) - Course title
 - `description` (string) - Course description
 - `credits` (number) - Number of credit hours
-- `prerequisites` (array of Id<"courses">) - Array of course IDs that are prerequisites
+- `prerequisites` (array of string) - Array of course codes (not IDs) that are prerequisites
+- `departmentId` (Id<"departments">) - Foreign key to the department offering this course
+- `programIds` (array of Id<"programs">) - Array of program IDs this course belongs to
+- `status` (string) - Course status: "C" (Core/Required), "R" (Required), "E" (Elective)
+- `level` (string) - Course level (e.g., "100", "200", "300", "400", "500")
 
 **Indexes:**
 - `by_code` - Index on `code` for unique lookups
+- `by_departmentId` - Index on `departmentId` for querying courses by department
+- `by_level` - Index on `level` for querying courses by level
+- `by_status` - Index on `status` for querying courses by status
+- `by_departmentId_level` - Composite index for querying courses by department and level
+
+**Foreign Key Relationships:**
+- `departmentId` → `departments._id`
 
 **Aggregate Root:** Yes (CourseAggregate)
 
 **Related Collections:**
-- Self-referencing: `prerequisites` array references other courses
-- Referenced by: `sections.courseId`
+- References: `departments`, `programs` (via programIds array)
+- Self-referencing: `prerequisites` array references other courses by code
+- Referenced by: `sections.courseId`, `programs.requiredCourses`
 
 ---
 
@@ -110,6 +121,11 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `capacity` (number) - Maximum number of students that can enroll
 - `scheduleSlots` (array of ScheduleSlotSpec) - Array of schedule slot value objects
 - `enrollmentCount` (number) - Current number of enrolled students
+- `isOpenForEnrollment` (optional boolean) - Whether section is published and open for student enrollment
+- `enrollmentDeadline` (optional number) - Unix timestamp for enrollment deadline
+- `finalGradesPosted` (optional boolean) - Whether final grades have been posted for this section
+- `gradesEditable` (optional boolean) - Whether grades can be edited (default true, false when final grades posted, can be reopened by registrar)
+- `isLocked` (optional boolean) - Whether section is locked for grade editing (default false, set to true when term ends)
 
 **Indexes:**
 - `by_courseId` - Index on `courseId` for querying sections by course
@@ -132,7 +148,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 
 **Related Collections:**
 - References: `courses`, `terms`, `academicSessions`, `users`
-- Referenced by: `enrollments.sectionId`, `assessments.sectionId`
+- Referenced by: `enrollments.sectionId`, `assessments.sectionId`, `grade_audit_log.sectionId`
 
 ---
 
@@ -141,23 +157,27 @@ The schema is defined using Convex's schema definition system, which provides ty
 **Purpose:** Represents all system users (students, instructors, admins, etc.).
 
 **Fields:**
-- `username` (string) - Unique username for authentication
+- `email` (string) - Unique email address for authentication
 - `hashedPassword` (string) - Hashed password (never store plain text)
-- `roles` (array of strings) - Array of user roles (e.g., "student", "instructor", "admin")
+- `roles` (array of strings) - Array of user roles (e.g., "student", "instructor", "admin", "registrar", "department_head")
 - `profile` (FullName value object) - User profile information
+  - `firstName` (string) - First name (required)
+  - `middleName` (optional string) - Middle name (optional)
+  - `lastName` (string) - Last name (required)
+- `active` (optional boolean) - Whether the user account is active
 
 **Indexes:**
-- `by_username` - Index on `username` for unique lookups and authentication
+- `by_email` - Index on `email` for unique lookups and authentication
 
 **Aggregate Root:** Yes (UserAggregate)
 
 **Invariants:**
 - Password must be hashed
 - Role assignments must be from a predefined set
-- Username must be unique
+- Email must be unique
 
 **Related Collections:**
-- Referenced by: `students.userId`, `departments.headId`, `sections.instructorId`, `grades.recordedBy`, `auditLogs.userId`, `graduationRecords.approvedBy`
+- Referenced by: `students.userId`, `instructors.userId`, `departments.headId`, `sections.instructorId`, `grades.recordedBy`, `auditLogs.userId`, `graduationRecords.approvedBy`, `sessions.userId`, `notifications.userId`, `grade_audit_log.adminId`, `transcripts.metadata.generatedBy`
 
 ---
 
@@ -169,19 +189,20 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `userId` (Id<"users">) - Foreign key to the user account
 - `studentNumber` (string) - Unique student identification number (part of StudentIdentifier)
 - `admissionYear` (number) - Year the student was admitted (part of StudentIdentifier)
-- `programId` (Id<"programs">) - Foreign key to the program the student is enrolled in
+- `departmentId` (Id<"departments">) - Foreign key to the department the student belongs to
 - `level` (string) - Student level (e.g., "Freshman", "Sophomore", "Junior", "Senior")
 - `status` (string) - Student status (e.g., "active", "suspended", "graduated", "inactive")
+- `academicStanding` (optional string) - Academic standing: "First Class", "Second Class (Upper Division)", "Second Class (Lower Division)", "Third Class", "Probation"
 
 **Indexes:**
 - `by_userId` - Index on `userId` for querying student by user account
 - `by_studentNumber` - Index on `studentNumber` for unique lookups
-- `by_programId` - Index on `programId` for querying students by program
+- `by_departmentId` - Index on `departmentId` for querying students by department
 - `by_status` - Index on `status` for filtering by student status
 
 **Foreign Key Relationships:**
 - `userId` → `users._id`
-- `programId` → `programs._id`
+- `departmentId` → `departments._id`
 
 **Aggregate Root:** Yes (StudentAggregate)
 
@@ -193,7 +214,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 - Student number must be unique
 
 **Related Collections:**
-- References: `users`, `programs`
+- References: `users`, `departments`
 - Referenced by: `enrollments.studentId`, `transcripts.studentId`, `graduationRecords.studentId`
 
 ---
@@ -207,8 +228,10 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `sectionId` (Id<"sections">) - Foreign key to the section
 - `sessionId` (Id<"academicSessions">) - Academic session ID (part of AcademicPeriod)
 - `termId` (Id<"terms">) - Term ID (part of AcademicPeriod)
-- `status` (string) - Enrollment status (e.g., "enrolled", "dropped", "completed", "failed", "withdrawn", "pending")
+- `status` (string) - Enrollment status (e.g., "active", "enrolled", "dropped", "completed", "failed", "waitlisted")
 - `enrolledAt` (number) - Unix timestamp of when enrollment occurred
+- `grade` (optional string) - Optional grade (e.g., "A", "B+", "85")
+- `term` (optional string) - Optional term name as string
 
 **Indexes:**
 - `by_studentId` - Index on `studentId` for querying enrollments by student
@@ -246,7 +269,8 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `sectionId` (Id<"sections">) - Foreign key to the section this assessment belongs to
 - `title` (string) - Title of the assessment
 - `weight` (number) - Weight percentage (e.g., 30 for 30% of final grade)
-- `maxScore` (number) - Maximum possible score
+- `totalPoints` (number) - Total points possible for this assessment
+- `dueDate` (number) - Unix timestamp for due date
 
 **Indexes:**
 - `by_sectionId` - Index on `sectionId` for querying assessments by section
@@ -270,7 +294,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 **Fields:**
 - `enrollmentId` (Id<"enrollments">) - Foreign key to the enrollment
 - `assessmentId` (Id<"assessments">) - Foreign key to the assessment
-- `grade` (GradeValue value object) - Grade information (numeric, letter, points)
+- `grade` (number) - Numeric grade (percentage 0-100)
 - `recordedBy` (Id<"users">) - Foreign key to the user who recorded the grade
 
 **Indexes:**
@@ -284,8 +308,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `assessmentId` → `assessments._id`
 - `recordedBy` → `users._id`
 
-**Value Objects:**
-- GradeValue: `grade` field
+**Note:** The grades table stores only numeric percentage (0-100). Letter grade mapping happens in the transcript service when generating transcripts.
 
 **Related Collections:**
 - References: `enrollments`, `assessments`, `users`
@@ -331,10 +354,12 @@ The schema is defined using Convex's schema definition system, which provides ty
 
 ### Academic Sessions Collection
 
-**Purpose:** Represents academic sessions (e.g., "Fall 2024", "Spring 2025") and their terms.
+**Purpose:** Represents academic sessions (e.g., "2024/2025") and their terms.
 
 **Fields:**
-- `label` (string) - Session label (e.g., "Fall 2024")
+- `yearLabel` (string) - Session year label (e.g., "2024/2025")
+- `startDate` (number) - Unix timestamp of session start date
+- `endDate` (number) - Unix timestamp of session end date
 - `terms` (array of term objects) - Array of terms within the session, each containing:
   - `id` (string) - Term identifier within the session
   - `name` (string) - Term name
@@ -342,7 +367,7 @@ The schema is defined using Convex's schema definition system, which provides ty
   - `endDate` (number) - Unix timestamp of term end
 
 **Indexes:**
-- `by_label` - Index on `label` for unique lookups
+- `by_yearLabel` - Index on `yearLabel` for unique lookups
 
 **Aggregate Root:** Yes (AcademicCalendarAggregate)
 
@@ -350,7 +375,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 
 **Invariants:**
 - Terms must have valid dates and be non-overlapping within a session
-- Session labels must be unique
+- Session year labels must be unique
 
 **Related Collections:**
 - Referenced by: `terms.sessionId`, `sections.sessionId`, `enrollments.sessionId`
@@ -416,8 +441,8 @@ The schema is defined using Convex's schema definition system, which provides ty
 **Purpose:** Represents system audit trail for tracking all significant domain events.
 
 **Fields:**
-- `entity` (string) - Entity type (e.g., "enrollment", "grade", "user")
-- `action` (string) - Action performed (e.g., "StudentEnrolled", "GradeEdited")
+- `entity` (string) - Entity type (e.g., "enrollment", "grade", "user", "course", "section", "assessment", "transcript", "graduation")
+- `action` (string) - Action performed (e.g., "StudentEnrolled", "GradeEdited", "CourseCreated", "SectionUpdated")
 - `userId` (Id<"users">) - Foreign key to the user who performed the action
 - `timestamp` (number) - Unix timestamp of when the action occurred
 - `details` (any) - Flexible object for varying audit details (e.g., `{ "previousGrade": "A", "newGrade": "B" }`)
@@ -432,13 +457,14 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `userId` → `users._id`
 
 **Required Events to Log:**
-- StudentEnrolled
-- StudentDropped
-- CourseGradePosted
-- GradeEdited
+- StudentEnrolled, StudentDropped, StudentCreated, StudentUpdated
+- CourseGradePosted, GradeEdited
+- CourseCreated, CourseUpdated
+- SectionCreated, SectionUpdated, SectionCancelled
+- AssessmentCreated, AssessmentUpdated, AssessmentDeleted
 - GraduationApproved
-- SectionCancelled
 - UserRoleChanged
+- TranscriptGenerated
 
 **Log Structure:**
 Each log entry includes:
@@ -450,6 +476,116 @@ Each log entry includes:
 
 **Related Collections:**
 - References: `users`
+
+### Instructors Collection
+
+**Purpose:** Represents instructor-specific information linked to user accounts.
+
+**Fields:**
+- `userId` (Id<"users">) - Foreign key to the user account
+- `departmentId` (Id<"departments">) - Foreign key to the department the instructor belongs to
+
+**Indexes:**
+- `by_userId` - Index on `userId` for querying instructor by user account
+- `by_departmentId` - Index on `departmentId` for querying instructors by department
+
+**Foreign Key Relationships:**
+- `userId` → `users._id`
+- `departmentId` → `departments._id`
+
+**Related Collections:**
+- References: `users`, `departments`
+
+---
+
+### Sessions Collection
+
+**Purpose:** Represents user authentication sessions with secure tokens.
+
+**Fields:**
+- `userId` (Id<"users">) - Foreign key to the user
+- `token` (string) - Secure session token
+- `expiresAt` (number) - Unix timestamp when session expires
+- `createdAt` (number) - Unix timestamp when session was created
+
+**Indexes:**
+- `by_token` - Index on `token` for session lookup
+- `by_userId` - Index on `userId` for querying sessions by user
+- `by_expiresAt` - Index on `expiresAt` for cleanup of expired sessions
+
+**Foreign Key Relationships:**
+- `userId` → `users._id`
+
+**Related Collections:**
+- References: `users`
+
+---
+
+### Notifications Collection
+
+**Purpose:** Represents user notifications.
+
+**Fields:**
+- `userId` (Id<"users">) - Foreign key to the user receiving the notification
+- `message` (string) - Notification message
+- `read` (boolean) - Whether the notification has been read
+- `createdAt` (number) - Unix timestamp when notification was created
+- `courseId` (optional Id<"courses">) - Optional course ID for navigation (e.g., grade notifications)
+
+**Indexes:**
+- `by_userId` - Index on `userId` for querying notifications by user
+- `by_userId_read` - Composite index for querying unread notifications
+- `by_createdAt` - Index on `createdAt` for chronological queries
+
+**Foreign Key Relationships:**
+- `userId` → `users._id`
+- `courseId` → `courses._id` (optional)
+
+**Related Collections:**
+- References: `users`, `courses` (optional)
+
+---
+
+### Grade Audit Log Collection
+
+**Purpose:** Represents audit trail for grade unlocking/locking actions by Registrar.
+
+**Fields:**
+- `adminId` (Id<"users">) - Registrar/admin who performed the action
+- `sectionId` (Id<"sections">) - Section affected by the action
+- `action` (string) - Action type: "UNLOCK" or "LOCK"
+- `reason` (string) - Mandatory reason for the action
+- `timestamp` (number) - Unix timestamp when action occurred
+
+**Indexes:**
+- `by_sectionId` - Index on `sectionId` for querying audit logs by section
+- `by_adminId` - Index on `adminId` for querying by admin
+- `by_timestamp` - Index on `timestamp` for chronological queries
+- `by_sectionId_timestamp` - Composite index for section history
+
+**Foreign Key Relationships:**
+- `adminId` → `users._id`
+- `sectionId` → `sections._id`
+
+**Related Collections:**
+- References: `users`, `sections`
+
+---
+
+### Settings Collection
+
+**Purpose:** Represents system-wide configuration settings.
+
+**Fields:**
+- `key` (string) - Setting key (e.g., "enrollmentDeadline")
+- `value` (any) - Setting value (flexible type)
+- `updatedAt` (number) - Unix timestamp when setting was last updated
+
+**Indexes:**
+- `by_key` - Index on `key` for setting lookups
+
+**Related Collections:**
+- None (standalone configuration)
 
 ---
 
@@ -614,9 +750,10 @@ All indexes are automatically maintained by Convex and optimize query performanc
 - Composite indexes on frequently queried field combinations
 
 ### Unique Constraint Indexes
-- `users.by_username` - Ensures username uniqueness
+- `users.by_email` - Ensures email uniqueness
 - `courses.by_code` - Ensures course code uniqueness
 - `students.by_studentNumber` - Ensures student number uniqueness
+- `academicSessions.by_yearLabel` - Ensures session year label uniqueness
 
 ### Query Optimization Indexes
 - Status fields (e.g., `students.by_status`, `enrollments.by_status`)
@@ -630,15 +767,16 @@ All indexes are automatically maintained by Convex and optimize query performanc
 The following collections serve as aggregate roots:
 
 1. **schools** - SchoolAggregate
-2. **programs** - ProgramAggregate
-3. **courses** - CourseAggregate
-4. **sections** - SectionAggregate
-5. **students** - StudentAggregate
-6. **enrollments** - EnrollmentAggregate
-7. **academicSessions** - AcademicCalendarAggregate
-8. **users** - UserAggregate
-9. **transcripts** - TranscriptAggregate
-10. **graduationRecords** - GraduationAggregate
+2. **courses** - CourseAggregate
+3. **sections** - SectionAggregate
+4. **students** - StudentAggregate
+5. **enrollments** - EnrollmentAggregate
+6. **academicSessions** - AcademicCalendarAggregate
+7. **users** - UserAggregate
+8. **transcripts** - TranscriptAggregate
+9. **graduationRecords** - GraduationAggregate
+
+**Note:** The `programs` collection is not an aggregate root but is referenced by courses and students.
 
 For detailed information about aggregate boundaries and invariants, see [Aggregate Roots and Invariants](./aggregates_and_invariants.md).
 

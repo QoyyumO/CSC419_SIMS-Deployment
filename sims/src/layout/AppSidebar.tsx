@@ -17,6 +17,7 @@ import {
   FileIcon,
   CalenderIcon,
   DocsIcon,
+  BoxIcon,
 } from '../icons';
 
 type NavItem = {
@@ -34,6 +35,7 @@ const AppSidebar: React.FC = () => {
   const userIsAdmin = isAdmin(roles);
   const userIsStudent = isStudent(roles);
   const userIsDepartmentHead = isDepartmentHead(roles);
+  const userIsRegistrar = roles.includes('registrar');
 
   const navItems: NavItem[] = useMemo(() => [
     {
@@ -45,7 +47,7 @@ const AppSidebar: React.FC = () => {
     ...(userIsStudent
       ? [
           {
-            icon: <FileIcon />,
+            icon: <BoxIcon />,
             name: 'Courses',
             path: '/courses',
           },
@@ -101,7 +103,22 @@ const AppSidebar: React.FC = () => {
           },
         ]
       : []),
-  ], [userIsAdmin, userIsStudent, userIsDepartmentHead]);
+    // Only show grades link for registrars
+    ...(userIsRegistrar
+      ? [
+          {
+            icon: <PencilIcon />,
+            name: 'Grades',
+            path: '/grades',
+          },
+          {
+            icon: <FileIcon />,
+            name: 'Term Processing',
+            path: '/processing',
+          },
+        ]
+      : []),
+  ], [userIsAdmin, userIsStudent, userIsDepartmentHead, userIsRegistrar]);
 
   const renderMenuItems = (
     navItems: NavItem[],

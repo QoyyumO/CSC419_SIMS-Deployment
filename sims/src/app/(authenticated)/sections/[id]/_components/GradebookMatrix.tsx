@@ -516,10 +516,10 @@ export default function GradebookMatrix({ sectionId }: GradebookMatrixProps) {
             size="sm"
             variant="outline"
             onClick={() => setShowPostFinalGradesModal(true)}
-            disabled={isPostingFinalGrades || finalGradesPosted}
+            disabled={isPostingFinalGrades || (finalGradesPosted && !gradesEditable)}
             className="bg-red-50 hover:bg-red-100 text-red-700 border-red-300 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 dark:border-red-700"
           >
-            {finalGradesPosted ? 'Final Grades Posted' : 'Post Final Grades'}
+            {finalGradesPosted && !gradesEditable ? 'Final Grades Posted' : 'Post Final Grades'}
           </Button>
         </div>
       </div>
@@ -555,7 +555,7 @@ export default function GradebookMatrix({ sectionId }: GradebookMatrixProps) {
         <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
           This will finalize the term and publish grades to student transcripts. Cannot be undone.
         </p>
-        <p className="mb-6 text-xs text-warning-600 dark:text-warning-400">
+        <div className="mb-6 text-xs text-warning-600 dark:text-warning-400">
           <strong>Warning:</strong> This action will:
           <ul className="mt-2 ml-4 list-disc">
             <li>Calculate final grades for all students based on current assessment grades</li>
@@ -563,7 +563,7 @@ export default function GradebookMatrix({ sectionId }: GradebookMatrixProps) {
             <li>Publish grades to student transcripts</li>
             <li>This action cannot be reversed</li>
           </ul>
-        </p>
+        </div>
         <div className="flex w-full items-center justify-end gap-3">
           <Button 
             size="sm" 

@@ -36,17 +36,34 @@ Enrolls a student in a course section with full validation.
 }
 ```
 
-**Example:**
+#### `enroll`
+
+Enrolls current authenticated student in a section (simplified enrollment).
+
+**Input:**
+- `sectionId`: ID of the section
+- `token`: Session token for authentication
+- `joinWaitlist`: Optional boolean to join waitlist if section is full
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates user is a student
+3. Validates section is open for enrollment
+4. Checks enrollment deadline
+5. Checks prerequisites
+6. Checks schedule conflicts
+7. Prevents duplicate enrollment in same course/term
+8. Creates enrollment (status: "active" or "waitlisted")
+9. Increments section enrollment count (if not waitlisted)
+
+**Returns:**
 ```typescript
-import { api } from "../_generated/api";
-import { useMutation } from "convex/react";
-
-const enrollStudent = useMutation(api.mutations.enrollmentMutations.enrollStudentInSection);
-
-await enrollStudent({
-  studentId: "...",
-  sectionId: "..."
-});
+{
+  success: true,
+  enrollmentId: Id<"enrollments">,
+  enrollmentCount: number,
+  status: "active" | "waitlisted"
+}
 ```
 
 #### `dropEnrollment`
@@ -60,8 +77,33 @@ Drops a student from a section (withdrawal).
 **Transaction Steps:**
 1. Validates enrollment exists and can be dropped
 2. Updates enrollment status to "dropped"
-3. Decrements section enrollment count
-4. Creates audit log entry
+3. Decrements section enrollment count (if was active)
+4. Auto-promotes first waitlisted student (if any)
+5. Creates audit log entry
+
+#### `dropCourse`
+
+Drops course enrollment for current authenticated student.
+
+**Input:**
+- `enrollmentId`: ID of the enrollment
+- `token`: Session token for authentication
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates enrollment belongs to authenticated student
+3. Updates enrollment status to "dropped"
+4. Decrements section enrollment count (if was active)
+5. Auto-promotes first waitlisted student (if any)
+6. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  promotedEnrollmentId: Id<"enrollments"> | null
+}
+```
 
 ---
 
@@ -79,35 +121,52 @@ Records a grade for an assessment.
 
 **Transaction Steps:**
 1. Reads enrollment and section
-2. Validates assessment belongs to section
-3. Validates score ≤ maxScore
-4. Calculates grade value (letter grade, points)
-5. Creates or updates grade document
-6. Creates audit log entry
+2. Validates section is not locked
+3. Validates grades are editable (if final grades posted)
+4. Validates assessment belongs to section
+5. Validates score is between 0 and totalPoints
+6. Calculates percentage (0-100)
+7. Creates or updates grade document
+8. Creates audit log entry (new grade or grade edit)
 
 **Returns:**
 ```typescript
 {
   success: true,
   gradeId: Id<"grades">,
-  gradeValue: {
-    numeric: number,
-    letter: string,
-    points: number
-  }
+  percentage: number
 }
 ```
 
-**Example:**
-```typescript
-const recordGrade = useMutation(api.mutations.gradeMutations.recordGrade);
+#### `updateGrades`
 
-await recordGrade({
-  enrollmentId: "...",
-  assessmentId: "...",
-  score: 85,
-  recordedByUserId: "..."
-});
+Updates multiple grades at once (bulk grade entry).
+
+**Input:**
+- `grades`: Array of `{ enrollmentId, assessmentId, score }`
+- `token`: Session token for authentication
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates user is an instructor
+3. For each grade:
+   - Validates enrollment exists
+   - Validates instructor owns the section
+   - Validates section is not locked
+   - Validates grades are editable
+   - Validates assessment belongs to section
+   - Validates score
+   - Creates or updates grade
+   - Creates audit log entry
+   - Creates notification for student (if new grade)
+
+**Returns:**
+```typescript
+{
+  success: true,
+  updated: number,
+  results: Array<{ success: true, gradeId, enrollmentId, assessmentId }>
+}
 ```
 
 #### `recordFinalGrade`
@@ -121,9 +180,266 @@ Records final grade for an enrollment based on all assessments.
 **Transaction Steps:**
 1. Retrieves all assessments for the section
 2. Retrieves all grades for the enrollment
-3. Calculates weighted final grade
-4. Updates enrollment status to "completed"
+3. Validates all assessments have grades
+4. Validates assessment weights sum to 100%
+5. Calculates weighted final grade
+6. Updates enrollment status to "completed"
+7. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  finalGrade: GradeValue,
+  finalPercentage: number
+}
+```
+
+---
+
+### Course Operations
+
+#### `createCourse`
+
+Creates a new course.
+
+**Input:**
+- `code`: Course code (e.g., "CSC101")
+- `title`: Course title
+- `description`: Course description
+- `credits`: Number of credits
+- `prerequisites`: Array of course codes
+- `departmentId`: ID of the department
+- `programIds`: Optional array of program IDs
+- `status`: Optional course status ("C" = Core, "R" = Required, "E" = Elective)
+- `level`: Course level
+- `createdByUserId`: ID of the user creating the course
+
+**Transaction Steps:**
+1. Validates course code uniqueness
+2. Validates prerequisites exist
+3. Validates no circular prerequisites
+4. Validates credit value
+5. Validates course status
+6. Creates course document
+7. Adds course to program requiredCourses (if status is C or R)
+8. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  courseId: Id<"courses">
+}
+```
+
+#### `updateCourse`
+
+Updates an existing course.
+
+**Input:**
+- `courseId`: ID of the course
+- `code`, `title`, `description`, `credits`, `prerequisites`, `departmentId`, `programIds`, `status`, `level`: Optional fields to update
+- `updatedByUserId`: ID of the user updating the course
+
+**Transaction Steps:**
+1. Validates course exists
+2. Validates all updated fields
+3. Updates course document
+4. Syncs course with program requiredCourses based on status
 5. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true
+}
+```
+
+---
+
+### Section Operations
+
+#### `createSection`
+
+Creates a new section.
+
+**Input:**
+- `courseId`: ID of the course
+- `sessionId`: ID of the academic session
+- `termId`: ID of the term
+- `instructorId`: ID of the instructor
+- `capacity`: Maximum enrollment capacity
+- `scheduleSlots`: Array of schedule slots `{ day, startTime, endTime, room }`
+- `createdByUserId`: ID of the user creating the section
+
+**Transaction Steps:**
+1. Validates course exists
+2. Validates instructor role
+3. Validates schedule assignment (instructor and room conflicts)
+4. Validates capacity
+5. Creates section document
+6. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  sectionId: Id<"sections">
+}
+```
+
+#### `updateSection`
+
+Updates an existing section.
+
+**Input:**
+- `sectionId`: ID of the section
+- `capacity`: Optional new capacity
+- `scheduleSlots`: Optional new schedule slots
+- `instructorId`: Optional new instructor ID
+- `updatedByUserId`: ID of the user updating the section
+
+**Transaction Steps:**
+1. Validates section exists
+2. Validates all updated fields
+3. Validates capacity update (cannot reduce below current enrollment)
+4. Validates schedule assignment (if scheduleSlots updated)
+5. Updates section document
+6. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true
+}
+```
+
+#### `cancelSection`
+
+Cancels a section.
+
+**Input:**
+- `sectionId`: ID of the section
+- `userId`: ID of the user cancelling the section
+- `reason`: Optional cancellation reason
+
+**Transaction Steps:**
+1. Validates section exists
+2. Gets enrolled students count
+3. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  affectedEnrollments: number
+}
+```
+
+#### `toggleGradeEditing`
+
+Toggles grade editing for a section (Registrar only).
+
+**Input:**
+- `sectionId`: ID of the section
+- `token`: Session token for authentication
+- `allowEditing`: Boolean to allow or lock grade editing
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates user is registrar or admin
+3. Validates section exists
+4. Validates final grades have been posted
+5. Updates gradesEditable field
+6. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  gradesEditable: boolean
+}
+```
+
+---
+
+### Assessment Operations
+
+#### `createAssessment`
+
+Creates a new assessment.
+
+**Input:**
+- `sectionId`: ID of the section
+- `title`: Assessment title
+- `weight`: Assessment weight (0-100)
+- `totalPoints`: Total points possible
+- `dueDate`: Due date (Unix timestamp)
+- `token`: Session token for authentication
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates section exists
+3. Validates assessment weight won't exceed 100%
+4. Validates weight is between 0 and 100
+5. Validates totalPoints is positive
+6. Creates assessment document
+7. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  assessmentId: Id<"assessments">
+}
+```
+
+#### `updateAssessment`
+
+Updates an existing assessment.
+
+**Input:**
+- `assessmentId`: ID of the assessment
+- `title`, `weight`, `totalPoints`, `dueDate`: Optional fields to update
+- `token`: Session token for authentication
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates assessment exists
+3. Validates all updated fields
+4. Validates weight won't exceed 100% (if weight updated)
+5. Updates assessment document
+6. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true
+}
+```
+
+#### `deleteAssessment`
+
+Deletes an assessment.
+
+**Input:**
+- `assessmentId`: ID of the assessment
+- `token`: Session token for authentication
+
+**Transaction Steps:**
+1. Authenticates user via token
+2. Validates assessment exists
+3. Validates no grades have been recorded for this assessment
+4. Creates audit log entry
+5. Deletes assessment document
+
+**Returns:**
+```typescript
+{
+  success: true
+}
+```
 
 ---
 
@@ -138,12 +454,13 @@ Processes a student's graduation with full degree audit.
 - `approverUserId`: ID of the user approving graduation
 
 **Transaction Steps:**
-1. Validates approver has authority
-2. Runs degree audit (checks all program requirements)
-3. Validates all requirements are satisfied
-4. Updates student status to "graduated"
-5. Creates graduation record
-6. Creates audit log entry
+1. Validates student exists
+2. Validates approver has authority
+3. Runs degree audit (checks all program requirements)
+4. Validates all requirements are satisfied
+5. Updates student status to "graduated"
+6. Creates graduation record
+7. Creates audit log entry
 
 **Returns:**
 ```typescript
@@ -151,25 +468,8 @@ Processes a student's graduation with full degree audit.
   success: true,
   graduationId: Id<"graduationRecords">,
   studentId: Id<"students">,
-  auditResult: {
-    eligible: boolean,
-    missingRequirements: string[],
-    totalCredits: number,
-    requiredCredits: number,
-    gpa: number,
-    requiredGPA: number
-  }
+  auditResult: DegreeAuditResult
 }
-```
-
-**Example:**
-```typescript
-const processGraduation = useMutation(api.mutations.graduationMutations.processStudentGraduation);
-
-await processGraduation({
-  studentId: "...",
-  approverUserId: "..."
-});
 ```
 
 #### `checkGraduationEligibility`
@@ -180,6 +480,91 @@ Checks if a student is eligible for graduation (read-only).
 - `studentId`: ID of the student
 
 **Returns:** Degree audit result with eligibility status
+
+---
+
+### Transcript Operations
+
+#### `generateTranscript`
+
+Generates an official transcript for a student.
+
+**Input:**
+- `studentId`: ID of the student
+- `generatedByUserId`: ID of the user generating the transcript
+- `format`: Optional format (default: "pdf")
+
+**Transaction Steps:**
+1. Validates student exists
+2. Gets or creates transcript
+3. Recalculates GPA from current entries
+4. Updates transcript with metadata
+5. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  transcriptId: Id<"transcripts">,
+  gpa: number,
+  entriesCount: number
+}
+```
+
+#### `addEnrollmentToTranscriptMutation`
+
+Adds a completed enrollment to a student's transcript.
+
+**Input:**
+- `transcriptId`: ID of the transcript
+- `enrollmentId`: ID of the enrollment
+- `term`: Term name
+- `year`: Year
+- `addedByUserId`: ID of the user adding the enrollment
+
+**Transaction Steps:**
+1. Validates transcript exists
+2. Creates transcript entry from enrollment
+3. Adds entry to transcript
+4. Recalculates GPA
+5. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  updatedGpa: number,
+  totalEntries: number
+}
+```
+
+---
+
+### User Operations
+
+#### `changeUserRoles`
+
+Changes user roles.
+
+**Input:**
+- `targetUserId`: ID of the user whose roles are being changed
+- `newRoles`: Array of new roles
+- `changedByUserId`: ID of the user making the change
+
+**Transaction Steps:**
+1. Validates user exists
+2. Validates new roles
+3. Updates user roles
+4. Creates audit log entry
+
+**Returns:**
+```typescript
+{
+  success: true,
+  previousRoles: string[],
+  newRoles: string[]
+}
+```
 
 ---
 

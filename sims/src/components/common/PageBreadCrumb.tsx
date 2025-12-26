@@ -74,7 +74,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ items, pageTitle }) => {
       <nav>
         <ol className="flex items-center gap-1.5">
           {breadcrumbItems.map((item, idx) => (
-            <li key={item.name} className="flex items-center">
+            <li key={`${item.name}-${idx}`} className="flex items-center">
               {item.href && idx !== breadcrumbItems.length - 1 ? (
                 <Link
                   className="inline-flex items-center gap-1.5 text-sm text-gray-500 capitalize dark:text-gray-400"
