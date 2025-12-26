@@ -86,7 +86,33 @@ export default function ProcessingPage() {
 
       setProcessingResult(result);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while processing the term';
+      let errorMessage = 'An error occurred while processing the term';
+      
+      if (err instanceof Error) {
+        const rawMessage = err.message;
+        
+        // Extract user-friendly message from Convex error format
+        // Look for "Cannot process term end:" which is the start of the user-friendly message
+        const userMessageMatch = rawMessage.match(/Cannot process term end:([^]*?)(?:\s+at\s|$)/);
+        if (userMessageMatch) {
+          errorMessage = `Cannot process term end:${userMessageMatch[1].trim()}`;
+        } else {
+          // Fallback: Remove technical prefixes and stack traces
+          const cleanedMessage = rawMessage
+            .replace(/\[CONVEX[^\]]+\]\s*/g, '')
+            .replace(/\[Request ID:[^\]]+\]\s*/g, '')
+            .replace(/Server Error\s*/g, '')
+            .replace(/Uncaught Error:\s*/g, '')
+            .replace(/\s*at handler[^]*$/g, '')
+            .replace(/\s*Called by client[^]*$/g, '')
+            .trim();
+          
+          if (cleanedMessage.length > 0) {
+            errorMessage = cleanedMessage;
+          }
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setIsProcessing(false);

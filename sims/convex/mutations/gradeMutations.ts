@@ -141,7 +141,15 @@ export const recordGrade = mutation({
     const previousPercentage = existingGrades.length > 0 ? existingGrades[0].grade : null;
 
     if (existingGrades.length > 0) {
-      // Update existing grade
+      // Handle duplicates: if multiple records exist, delete all but the first one
+      if (existingGrades.length > 1) {
+        // Delete all duplicate records except the first one
+        for (let i = 1; i < existingGrades.length; i++) {
+          await ctx.db.delete(existingGrades[i]._id);
+        }
+      }
+      
+      // Update the first (and now only) existing grade
       const existingGrade = existingGrades[0];
       await ctx.db.patch(existingGrade._id, {
         grade: roundedPercentage,
@@ -411,7 +419,15 @@ export const updateGrades = mutation({
         const previousPercentage = existingGrades.length > 0 ? existingGrades[0].grade : null;
 
         if (isUpdate) {
-          // Update existing grade
+          // Handle duplicates: if multiple records exist, delete all but the first one
+          if (existingGrades.length > 1) {
+            // Delete all duplicate records except the first one
+            for (let i = 1; i < existingGrades.length; i++) {
+              await ctx.db.delete(existingGrades[i]._id);
+            }
+          }
+          
+          // Update the first (and now only) existing grade
           const existingGrade = existingGrades[0];
           await ctx.db.patch(existingGrade._id, {
             grade: roundedPercentage,

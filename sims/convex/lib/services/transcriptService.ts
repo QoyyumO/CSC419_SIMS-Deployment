@@ -216,6 +216,7 @@ export async function generateOfficialTranscript(
 
 /**
  * Adds a completed enrollment to the transcript
+ * If an entry for the same course, term, and year already exists, it will be updated instead of creating a duplicate
  */
 export async function addEnrollmentToTranscript(
   db: DatabaseWriter,
@@ -237,8 +238,25 @@ export async function addEnrollmentToTranscript(
     year
   );
 
-  // Add entry to transcript
-  const updatedEntries = [...transcript.entries, entry];
+  // Check if an entry with the same courseCode, term, and year already exists
+  // Remove all duplicates and keep only one (which we'll update)
+  const isDuplicate = transcript.entries.some(
+    (e) => e.courseCode === entry.courseCode && e.term === entry.term && e.year === entry.year
+  );
+
+  let updatedEntries: TranscriptEntry[];
+  if (isDuplicate) {
+    // Remove all duplicate entries and add the updated one
+    updatedEntries = transcript.entries.filter(
+      (e) => !(e.courseCode === entry.courseCode && e.term === entry.term && e.year === entry.year)
+    );
+    // Add the updated entry
+    updatedEntries.push(entry);
+  } else {
+    // Add new entry
+    updatedEntries = [...transcript.entries, entry];
+  }
+
   const newGPA = calculateCumulativeGPA(updatedEntries);
 
   // Update transcript
