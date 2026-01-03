@@ -13,7 +13,7 @@ import {
 import {
   runDegreeAudit,
 } from "../lib/services/graduationService";
-import { logGraduationApproved } from "../lib/services/auditLogService";
+import { logGraduationApproved, logAlumniProfileCreated } from "../lib/services/auditLogService";
 
 /**
  * Operation: Process a Student's Graduation
@@ -84,11 +84,38 @@ export const processStudentGraduation = mutation({
       }
     );
 
+    // Auto-create alumni profile (defaults: email from user, phone/address empty, employmentStatus unknown)
+    const user = await ctx.db.get(student.userId);
+    const alumniId = await ctx.db.insert("alumniProfiles", {
+      studentId: args.studentId,
+      graduationYear: new Date().getFullYear(),
+      contactInfo: {
+        email: user?.email ?? "",
+        phone: "",
+        address: {
+          street: "",
+          city: "",
+          state: "",
+          postalCode: "",
+          country: "",
+        },
+      },
+      employmentStatus: "unknown",
+    });
+
+    // Audit log for alumni profile creation
+    await logAlumniProfileCreated(ctx.db, args.approverUserId, alumniId, {
+      graduationId,
+      studentId: args.studentId,
+      graduationYear: new Date().getFullYear(),
+    });
+
     return {
       success: true,
       graduationId,
       studentId: args.studentId,
       auditResult,
+      alumniId,
     };
   },
 });

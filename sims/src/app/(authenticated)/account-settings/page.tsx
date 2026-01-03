@@ -12,6 +12,7 @@ import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import UserMetaCard from "@/components/user-profile/UserMetaCard";
 import UserInfoCard from "@/components/user-profile/UserInfoCard";
 import AcademicInfoCard from "@/components/user-profile/AcademicInfoCard";
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const user = useCurrentUser();
@@ -31,6 +32,16 @@ export default function ProfilePage() {
   // Check if user has student role
   const isStudent = user?.roles.includes("student") ?? false;
 
+  function AlumniProfileLink({ studentId }: { studentId: string }) {
+    const alumni = useQuery((api as any).alumni.getAlumniProfile, { studentId }) as any | undefined;
+    if (!alumni) return null;
+    return (
+      <div className="mt-4">
+        <Link href={`/alumni/${alumni._id}`} className="text-sm text-brand-500 underline">View Alumni Profile</Link>
+      </div>
+    );
+  }
+
   return (
     <div>
         <PageBreadCrumb pageTitle="My Profile" />
@@ -47,6 +58,7 @@ export default function ProfilePage() {
               <UserMetaCard user={user} />
               <UserInfoCard user={user} onSuccess={handleSuccess} />
               {isStudent && profileData && "student" in profileData && (
+                <>
                 <AcademicInfoCard 
                   studentData={{
                     studentNumber: profileData.student.studentNumber,
@@ -71,6 +83,12 @@ export default function ProfilePage() {
                     } : null,
                   }} 
                 />
+
+                {/* Show link to alumni profile if graduated */}
+                {profileData.student.status === 'graduated' && (
+                  <AlumniProfileLink studentId={profileData.student._id} />
+                )}
+                </>
               )}
             </div>
           </TabPane>
