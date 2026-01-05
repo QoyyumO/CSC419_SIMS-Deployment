@@ -93,6 +93,16 @@ const AppSidebar: React.FC = () => {
           },
         ]
       : []),
+    // Alumni access for admins and registrars
+    ...(userIsAdmin || userIsRegistrar
+      ? [
+          {
+            icon: <GroupIcon />,
+            name: 'Alumni',
+            path: '/alumni',
+          },
+        ]
+      : []),
     // Only show sections link for department heads
     ...(userIsDepartmentHead
       ? [

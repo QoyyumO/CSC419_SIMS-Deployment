@@ -159,6 +159,38 @@ export async function logGraduationApproved(
   );
 }
 
+export async function logAlumniProfileCreated(
+  db: DatabaseWriter,
+  userId: Id<"users">,
+  alumniProfileId: Id<"alumniProfiles">,
+  details?: Record<string, unknown>
+): Promise<Id<"auditLogs">> {
+  return createAuditLog(
+    db,
+    "alumniProfile",
+    "AlumniProfileCreated",
+    userId,
+    alumniProfileId,
+    details
+  );
+}
+
+export async function logAlumniProfileUpdated(
+  db: DatabaseWriter,
+  userId: Id<"users">,
+  alumniProfileId: Id<"alumniProfiles">,
+  details?: Record<string, unknown>
+): Promise<Id<"auditLogs">> {
+  return createAuditLog(
+    db,
+    "alumniProfile",
+    "AlumniProfileUpdated",
+    userId,
+    alumniProfileId,
+    details
+  );
+}
+
 export async function logSectionCancelled(
   db: DatabaseWriter,
   userId: Id<"users">,

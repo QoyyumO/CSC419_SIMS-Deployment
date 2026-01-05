@@ -329,8 +329,33 @@ export default defineSchema({
     .index("by_approvedBy", ["approvedBy"])
     .index("by_date", ["date"]),
 
-  /**
-   * Audit Logs Collection
+  /**   * Alumni Profiles Collection
+   * Represents alumni information for graduated students.
+   * Foreign Keys: studentId -> students._id
+   */
+  alumniProfiles: defineTable({
+    studentId: v.id("students"),
+    graduationYear: v.number(),
+    contactInfo: v.object({
+      email: v.string(),
+      phone: v.string(),
+      address: v.object({
+        street: v.string(),
+        city: v.string(),
+        state: v.string(),
+        postalCode: v.string(),
+        country: v.string(),
+      }),
+    }),
+    employmentStatus: v.string(),
+    currentEmployer: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    linkedInUrl: v.optional(v.string()),
+  })
+    .index("by_studentId", ["studentId"])
+    .index("by_graduationYear", ["graduationYear"]),
+
+  /**   * Audit Logs Collection
    * Represents system audit trail for tracking changes
    * Foreign Keys: userId → users._id
    */

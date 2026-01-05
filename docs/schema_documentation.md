@@ -436,6 +436,28 @@ The schema is defined using Convex's schema definition system, which provides ty
 
 ---
 
+### Alumni Profiles Collection
+
+**Purpose:** Stores alumni contact and employment information after graduation. Profiles are created automatically on graduation approval and can be edited by alumni or updated by administrators.
+
+**Fields:**
+- `studentId` (Id<"students">) - Foreign key to the graduated student
+- `graduationYear` (number) - Year of graduation
+- `contactInfo` (object) - Contact object containing `email`, `phone`, and `address` (street, city, state, postalCode, country)
+- `employmentStatus` (string) - Employment status (e.g., "employed", "seeking", "unknown")
+- `currentEmployer` (optional string) - Current employer
+- `jobTitle` (optional string) - Job title
+- `linkedInUrl` (optional string) - LinkedIn profile URL
+
+**Indexes:**
+- `by_studentId` - Fast lookup by student
+- `by_graduationYear` - Filter and aggregate by graduation year
+
+**Notes:**
+- Profiles are created automatically when a student's graduation is approved. Administrators and registrars may also create or update profiles. Alumni users may update their own profile information via the UI.
+
+---
+
 ### Audit Logs Collection
 
 **Purpose:** Represents system audit trail for tracking all significant domain events.
