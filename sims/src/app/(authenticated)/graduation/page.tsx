@@ -12,6 +12,7 @@ import { RoleGuard } from '@/components/auth/RoleGuard';
 import { useAuth } from '@/hooks/useAuth';
 import StudentsEligibilityTable from './_components/StudentsEligibilityTable';
 import Alert from '@/components/ui/alert/Alert';
+import GraduationApprovalModal from './_components/GraduationApprovalModal';
 
 export default function GraduationPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +26,12 @@ export default function GraduationPage() {
     requiredCredits: number;
     gpa: number;
     requiredGPA: number;
+  } | null>(null);
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [selectedStudentForApproval, setSelectedStudentForApproval] = useState<{
+    studentId: Id<'students'>;
+    name: string;
+    studentNumber: string;
   } | null>(null);
   const { user } = useAuth();
 
@@ -66,6 +73,28 @@ export default function GraduationPage() {
     } finally {
       setCheckingStudentId(null);
     }
+  };
+
+  const handleApproveGraduation = (studentId: Id<'students'>) => {
+    const student = students?.find((s) => s._id === studentId);
+    if (student && eligibilityResult && eligibilityResult.studentId === studentId) {
+      setSelectedStudentForApproval({
+        studentId,
+        name: student.name,
+        studentNumber: student.studentNumber,
+      });
+      setApprovalModalOpen(true);
+    }
+  };
+
+  const handleConfirmApproval = async () => {
+    if (!selectedStudentForApproval || !user?._id) {
+      return;
+    }
+    // This will be implemented in the next task (task 6)
+    // For now, just close the modal
+    setApprovalModalOpen(false);
+    setSelectedStudentForApproval(null);
   };
 
   return (
@@ -134,8 +163,22 @@ export default function GraduationPage() {
               isLoading={isLoading}
               onCheckEligibility={handleCheckEligibility}
               checkingStudentId={checkingStudentId}
+              eligibilityResult={eligibilityResult}
+              onApproveGraduation={handleApproveGraduation}
             />
           </ComponentCard>
+
+          {/* Graduation Approval Modal */}
+          <GraduationApprovalModal
+            isOpen={approvalModalOpen}
+            onClose={() => {
+              setApprovalModalOpen(false);
+              setSelectedStudentForApproval(null);
+            }}
+            onConfirm={handleConfirmApproval}
+            studentInfo={selectedStudentForApproval}
+            eligibilityResult={eligibilityResult}
+          />
         </div>
       </div>
     </RoleGuard>

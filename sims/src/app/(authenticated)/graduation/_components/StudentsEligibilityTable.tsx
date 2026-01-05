@@ -24,6 +24,16 @@ interface StudentsEligibilityTableProps {
   isLoading: boolean;
   onCheckEligibility: (studentId: Id<'students'>) => void;
   checkingStudentId: Id<'students'> | null;
+  eligibilityResult: {
+    studentId: Id<'students'>;
+    eligible: boolean;
+    missingRequirements: string[];
+    totalCredits: number;
+    requiredCredits: number;
+    gpa: number;
+    requiredGPA: number;
+  } | null;
+  onApproveGraduation: (studentId: Id<'students'>) => void;
 }
 
 export default function StudentsEligibilityTable({
@@ -31,6 +41,8 @@ export default function StudentsEligibilityTable({
   isLoading,
   onCheckEligibility,
   checkingStudentId,
+  eligibilityResult,
+  onApproveGraduation,
 }: StudentsEligibilityTableProps) {
   const [sortKey, setSortKey] = useState<'name' | 'studentNumber' | 'department' | 'gpa' | 'credits'>('name');
   const [sortAsc, setSortAsc] = useState(false);
@@ -217,14 +229,27 @@ export default function StudentsEligibilityTable({
                 </Badge>
               </TableCell>
               <TableCell className="px-5 py-3 text-start">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onCheckEligibility(row._id)}
-                  disabled={checkingStudentId === row._id}
-                >
-                  {checkingStudentId === row._id ? 'Checking...' : 'Check Eligibility'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onCheckEligibility(row._id)}
+                    disabled={checkingStudentId === row._id}
+                  >
+                    {checkingStudentId === row._id ? 'Checking...' : 'Check Eligibility'}
+                  </Button>
+                  {eligibilityResult &&
+                    eligibilityResult.studentId === row._id &&
+                    eligibilityResult.eligible && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => onApproveGraduation(row._id)}
+                      >
+                        Approve Graduation
+                      </Button>
+                    )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
