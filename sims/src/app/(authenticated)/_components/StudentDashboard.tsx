@@ -9,11 +9,14 @@ import PageBreadCrumb from "@/components/common/PageBreadCrumb";
 import MetricCard from "@/components/common/MetricCard";
 import ComponentCard from "@/components/common/ComponentCard";
 import Badge from "@/components/ui/badge/Badge";
-import { PieChartIcon, TaskIcon, CheckCircleIcon, CalenderIcon } from "@/icons";
+import { PieChartIcon, TaskIcon, CheckCircleIcon, CalenderIcon, AlertIcon } from "@/icons";
 import Button from "@/components/ui/button/Button";
 import WeeklyCalendarView from "./WeeklyCalendarView";
 import { Modal } from "@/components/ui/modal";
 import Alert from "@/components/ui/alert/Alert";
+import { useAuth } from "@/hooks/useAuth";
+import { useHasRole } from "@/hooks/useHasRole";
+import Link from "next/link";
 
 type ScheduleSlot = {
   day: string;
@@ -49,6 +52,9 @@ type StudentStats = {
 
 export default function StudentDashboardView() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isRegistrar = useHasRole('registrar');
+  
   // Initialize session token from localStorage using lazy initialization
   const [sessionToken] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -96,6 +102,46 @@ export default function StudentDashboardView() {
 
   // @ts-expect-error - Convex API path with slashes
   const dropCourseMutation = useMutation(api["mutations/enrollmentMutations"].dropCourse);
+
+  // Get student record to get studentId for graduation check
+  const studentRecord = useQuery(
+    api.users.getProfile,
+    user?._id ? { userId: user._id } : "skip"
+  ) as any | undefined;
+
+  const studentId = studentRecord?.student?._id as Id<'students'> | undefined;
+
+  // State for graduation eligibility
+  const [graduationEligibility, setGraduationEligibility] = useState<{
+    eligible: boolean;
+    missingRequirements: string[];
+    totalCredits: number;
+    requiredCredits: number;
+    gpa: number;
+    requiredGPA: number;
+  } | null>(null);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+
+  // @ts-expect-error - Convex API path with slashes
+  const checkEligibilityMutation = useMutation((api as any)['mutations/graduationMutations'].checkGraduationEligibility);
+
+  // Check graduation eligibility when studentId is available
+  useEffect(() => {
+    if (studentId && !checkingEligibility && !graduationEligibility) {
+      setCheckingEligibility(true);
+      checkEligibilityMutation({ studentId })
+        .then((result) => {
+          setGraduationEligibility(result);
+        })
+        .catch((error) => {
+          console.error('Error checking graduation eligibility:', error);
+        })
+        .finally(() => {
+          setCheckingEligibility(false);
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   const isLoading = stats === undefined || transcriptData === undefined;
   
@@ -293,6 +339,97 @@ export default function StudentDashboardView() {
               </div>
             </div>
           </div>
+
+          {/* Graduation Status */}
+          {graduationEligibility && (
+            <ComponentCard
+              title="Graduation Status"
+              desc="Your graduation eligibility status"
+            >
+              <div className="space-y-4">
+                {graduationEligibility.eligible ? (
+                  <div className="rounded-lg border-2 border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <h3 className="text-lg font-semibold text-green-800 dark:text-green-300">
+                            Eligible for Graduation
+                          </h3>
+                        </div>
+                        <p className="mt-2 text-sm text-green-700 dark:text-green-400">
+                          You have met all graduation requirements and are eligible to graduate.
+                        </p>
+                        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-green-600 dark:text-green-400">GPA: </span>
+                            <span className="font-medium text-green-800 dark:text-green-300">
+                              {graduationEligibility.gpa.toFixed(2)} / {graduationEligibility.requiredGPA}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-green-600 dark:text-green-400">Credits: </span>
+                            <span className="font-medium text-green-800 dark:text-green-300">
+                              {graduationEligibility.totalCredits} / {graduationEligibility.requiredCredits}
+                            </span>
+                          </div>
+                        </div>
+                        {isRegistrar && (
+                          <div className="mt-4">
+                            <Link href="/graduation">
+                              <Button variant="outline" size="sm">
+                                View Graduation Management
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border-2 border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <AlertIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                          <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-300">
+                            Not Yet Eligible for Graduation
+                          </h3>
+                        </div>
+                        <p className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                          You still need to meet some requirements before you can graduate.
+                        </p>
+                        <div className="mt-4 space-y-2">
+                          <div className="text-sm">
+                            <span className="font-medium text-yellow-800 dark:text-yellow-300">Missing Requirements:</span>
+                            <ul className="mt-2 list-disc list-inside space-y-1 text-yellow-700 dark:text-yellow-400">
+                              {graduationEligibility.missingRequirements.map((req, index) => (
+                                <li key={index}>{req}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-yellow-600 dark:text-yellow-400">Current GPA: </span>
+                              <span className="font-medium text-yellow-800 dark:text-yellow-300">
+                                {graduationEligibility.gpa.toFixed(2)} / {graduationEligibility.requiredGPA}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-yellow-600 dark:text-yellow-400">Current Credits: </span>
+                              <span className="font-medium text-yellow-800 dark:text-yellow-300">
+                                {graduationEligibility.totalCredits} / {graduationEligibility.requiredCredits}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ComponentCard>
+          )}
 
           {/* Weekly Schedule Calendar */}
           {stats.currentSchedule.length > 0 && (

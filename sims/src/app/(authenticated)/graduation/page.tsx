@@ -159,8 +159,8 @@ export default function GraduationPage() {
 
   return (
     <RoleGuard
-      roles={['admin', 'registrar', 'department_head']}
-      unauthorizedMessage="You must be an administrator, registrar, or department head to access this page."
+      roles={['registrar']}
+      unauthorizedMessage="You must be a registrar to access this page."
     >
       <div>
         <PageBreadCrumb pageTitle="Graduation Management" />
