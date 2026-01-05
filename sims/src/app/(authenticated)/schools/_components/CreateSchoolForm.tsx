@@ -39,7 +39,7 @@ export default function CreateSchool({ isOpen, onClose, onSuccess }: CreateSchoo
     phone?: string;
   }>({});
 
-  const createSchoolMutation = useMutation(api.schools.create);
+  const createSchoolMutation = useMutation(api.functions.schools.create);
 
   const validate = (): boolean => {
     const errors: typeof validationErrors = {};

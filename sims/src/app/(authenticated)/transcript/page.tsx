@@ -43,7 +43,7 @@ export default function TranscriptPage() {
 
   // Fetch transcript data
   const transcriptData = useQuery(
-    api.transcript.getFullHistory,
+    api.functions.transcript.getFullHistory,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as TranscriptData | undefined | Error;
 

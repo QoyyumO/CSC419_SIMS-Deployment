@@ -5,11 +5,11 @@
  * Accessible only to users with role === 'registrar'.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { validateSessionToken } from "./lib/session";
-import { Id } from "./_generated/dataModel";
-import { computeFinalGrade } from "./lib/services/gradingService";
+import { validateSessionToken } from "../lib/session";
+import { Id } from "../_generated/dataModel";
+import { computeFinalGrade } from "../lib/services/gradingService";
 
 /**
  * Get all sections with aggregated status for registrar grade dashboard

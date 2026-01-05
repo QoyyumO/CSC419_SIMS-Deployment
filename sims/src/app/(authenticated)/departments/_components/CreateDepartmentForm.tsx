@@ -45,11 +45,11 @@ export default function CreateDepartment({ isOpen, onClose, onSuccess }: CreateD
     headId?: string;
   }>({});
 
-  const createDepartmentMutation = useMutation(api.departments.create);
+  const createDepartmentMutation = useMutation(api.functions.departments.create);
   
   // Fetch schools and users for dropdowns
-  const schools = useQuery(api.schools.list) as School[] | undefined;
-  const users = useQuery(api.users.getUsersByRole, { role: 'department_head' }) as User[] | undefined;
+  const schools = useQuery(api.functions.schools.list) as School[] | undefined;
+  const users = useQuery(api.functions.users.getUsersByRole, { role: 'department_head' }) as User[] | undefined;
 
   const validate = (): boolean => {
     const errors: typeof validationErrors = {};

@@ -47,7 +47,7 @@ export default function CourseDetailPage() {
 
   // Fetch course details
   const courseDetails = useQuery(
-    api.courses.getDetails,
+    api.functions.courses.getDetails,
     courseId ? { courseId } : 'skip'
   ) as CourseDetails | undefined;
 

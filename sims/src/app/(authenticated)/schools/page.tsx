@@ -35,7 +35,7 @@ export default function SchoolsPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   // Fetch schools
-  const schools = useQuery(api.schools.list) as School[] | undefined;
+  const schools = useQuery(api.functions.schools.list) as School[] | undefined;
 
   const isLoading = schools === undefined;
 

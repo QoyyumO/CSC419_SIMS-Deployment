@@ -49,13 +49,13 @@ export default function DepartmentHeadDashboard() {
 
   // Fetch dashboard stats
   const stats = useQuery(
-    api.department.getDashboardStats,
+    api.functions.department.getDashboardStats,
     sessionToken ? { token: sessionToken } : "skip"
   ) as DashboardStats | undefined;
 
   // Fetch sections
   const sections = useQuery(
-    api.department.getSections,
+    api.functions.department.getSections,
     sessionToken
       ? {
           token: sessionToken,
@@ -64,7 +64,7 @@ export default function DepartmentHeadDashboard() {
   ) as Section[] | undefined;
 
   // Fetch terms for filter
-  const terms = useQuery(api.department.getTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.department.getTerms) as Term[] | undefined;
 
   const isLoading = stats === undefined || sections === undefined || terms === undefined;
 

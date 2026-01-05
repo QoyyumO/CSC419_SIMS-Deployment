@@ -61,13 +61,13 @@ export default function StudentView({ sessionToken }: StudentViewProps) {
 
   // Fetch active grades
   const gradesData = useQuery(
-    api.grades.getMyActiveGrades,
+    api.functions.grades.getMyActiveGrades,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as ActiveGrade[] | undefined | Error;
 
   // Fetch notifications for real-time updates
   const notifications = useQuery(
-    api.notifications.getMyNotifications,
+    api.functions.notifications.getMyNotifications,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as Array<{
     _id: string;

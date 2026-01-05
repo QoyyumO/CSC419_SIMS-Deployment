@@ -4,10 +4,10 @@
  * Provides queries for fetching grades data for the gradebook interface.
  */
 
-import { query } from "./_generated/server";
+import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
-import { validateSessionToken } from "./lib/session";
+import { Id } from "../_generated/dataModel";
+import { validateSessionToken } from "../lib/session";
 
 /**
  * Converts percentage to letter grade using the standard mapping:

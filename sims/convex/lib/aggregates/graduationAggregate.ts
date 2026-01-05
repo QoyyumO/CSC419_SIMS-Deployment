@@ -12,8 +12,9 @@ import { Student, UserRole, TranscriptEntry } from "./types";
 
 /**
  * Valid roles that can approve graduation
+ * Only registrars can approve student graduations
  */
-export const APPROVER_ROLES = ["registrar", "admin", "department_head"];
+export const APPROVER_ROLES = ["registrar"];
 
 /**
  * Validates that approver has appropriate authority

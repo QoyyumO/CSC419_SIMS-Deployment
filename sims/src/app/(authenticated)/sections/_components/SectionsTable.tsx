@@ -56,13 +56,13 @@ export default function SectionsTable({
 
   // Fetch department instructors
   const instructors = useQuery(
-    api.department.getDepartmentInstructors,
+    api.functions.department.getDepartmentInstructors,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as Instructor[] | undefined;
 
-  const assignInstructor = useMutation(api.department.assignInstructor);
-  const removeInstructor = useMutation(api.department.removeInstructor);
-  const deleteSection = useMutation(api.department.deleteSection);
+  const assignInstructor = useMutation(api.functions.department.assignInstructor);
+  const removeInstructor = useMutation(api.functions.department.removeInstructor);
+  const deleteSection = useMutation(api.functions.department.deleteSection);
 
   const handleInstructorChange = async (
     sectionId: Id<'sections'>,

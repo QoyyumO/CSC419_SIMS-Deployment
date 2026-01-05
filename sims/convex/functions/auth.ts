@@ -5,15 +5,15 @@
  * Uses password hashing with Web Crypto API (compatible with Convex environment).
  */
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
-import { NotFoundError, ValidationError } from "./lib/errors";
+import { NotFoundError, ValidationError } from "../lib/errors";
 import {
   createSession,
   validateSessionToken,
   deleteSessionByToken,
   deleteAllUserSessions,
-} from "./lib/session";
+} from "../lib/session";
 
 /**
  * Hash a password using Web Crypto API (PBKDF2)

@@ -18,7 +18,7 @@ interface ChangePasswordFormProps {
 
 export function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswordFormProps) {
   const currentUser = useCurrentUser();
-  const changePasswordMutation = useMutation(api.auth.changePassword);
+  const changePasswordMutation = useMutation(api.functions.auth.changePassword);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

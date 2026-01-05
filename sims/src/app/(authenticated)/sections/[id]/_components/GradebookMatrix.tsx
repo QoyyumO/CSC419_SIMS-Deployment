@@ -52,7 +52,7 @@ export default function GradebookMatrix({ sectionId }: GradebookMatrixProps) {
 
   // Fetch gradebook data
   const gradebookData = useQuery(
-    api.grades.getBySection,
+    api.functions.grades.getBySection,
     sessionToken && sectionId
       ? { sectionId, token: sessionToken }
       : "skip"
@@ -63,7 +63,7 @@ export default function GradebookMatrix({ sectionId }: GradebookMatrixProps) {
   const updateGradesMutation = useMutation(api["mutations/gradeMutations"].updateGrades);
   
   // Mutation for posting final grades
-  const postFinalGradeMutation = useMutation(api.enrollments.postFinalGrade);
+  const postFinalGradeMutation = useMutation(api.functions.enrollments.postFinalGrade);
 
   // Local state for editing grades
   const [gradeValues, setGradeValues] = useState<Map<string, string>>(new Map());

@@ -8,19 +8,25 @@
  * @module
  */
 
-import type * as academicSessions from "../academicSessions.js";
-import type * as alumni from "../alumni.js";
-import type * as assessments from "../assessments.js";
-import type * as auth from "../auth.js";
-import type * as courses from "../courses.js";
-import type * as cron from "../cron.js";
-import type * as dashboard from "../dashboard.js";
-import type * as department from "../department.js";
-import type * as departments from "../departments.js";
-import type * as enrollments from "../enrollments.js";
 import type * as examples_studentMutations from "../examples/studentMutations.js";
-import type * as grades from "../grades.js";
-import type * as instructors from "../instructors.js";
+import type * as functions_academicSessions from "../functions/academicSessions.js";
+import type * as functions_alumni from "../functions/alumni.js";
+import type * as functions_assessments from "../functions/assessments.js";
+import type * as functions_auth from "../functions/auth.js";
+import type * as functions_courses from "../functions/courses.js";
+import type * as functions_cron from "../functions/cron.js";
+import type * as functions_dashboard from "../functions/dashboard.js";
+import type * as functions_department from "../functions/department.js";
+import type * as functions_departments from "../functions/departments.js";
+import type * as functions_enrollments from "../functions/enrollments.js";
+import type * as functions_grades from "../functions/grades.js";
+import type * as functions_instructors from "../functions/instructors.js";
+import type * as functions_notifications from "../functions/notifications.js";
+import type * as functions_programs from "../functions/programs.js";
+import type * as functions_registrar from "../functions/registrar.js";
+import type * as functions_schools from "../functions/schools.js";
+import type * as functions_transcript from "../functions/transcript.js";
+import type * as functions_users from "../functions/users.js";
 import type * as lib_aggregates_academicCalendarAggregate from "../lib/aggregates/academicCalendarAggregate.js";
 import type * as lib_aggregates_courseAggregate from "../lib/aggregates/courseAggregate.js";
 import type * as lib_aggregates_enrollmentAggregate from "../lib/aggregates/enrollmentAggregate.js";
@@ -50,12 +56,6 @@ import type * as mutations_graduationMutations from "../mutations/graduationMuta
 import type * as mutations_sectionMutations from "../mutations/sectionMutations.js";
 import type * as mutations_transcriptMutations from "../mutations/transcriptMutations.js";
 import type * as mutations_userMutations from "../mutations/userMutations.js";
-import type * as notifications from "../notifications.js";
-import type * as programs from "../programs.js";
-import type * as registrar from "../registrar.js";
-import type * as schools from "../schools.js";
-import type * as transcript from "../transcript.js";
-import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -64,19 +64,25 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  academicSessions: typeof academicSessions;
-  alumni: typeof alumni;
-  assessments: typeof assessments;
-  auth: typeof auth;
-  courses: typeof courses;
-  cron: typeof cron;
-  dashboard: typeof dashboard;
-  department: typeof department;
-  departments: typeof departments;
-  enrollments: typeof enrollments;
   "examples/studentMutations": typeof examples_studentMutations;
-  grades: typeof grades;
-  instructors: typeof instructors;
+  "functions/academicSessions": typeof functions_academicSessions;
+  "functions/alumni": typeof functions_alumni;
+  "functions/assessments": typeof functions_assessments;
+  "functions/auth": typeof functions_auth;
+  "functions/courses": typeof functions_courses;
+  "functions/cron": typeof functions_cron;
+  "functions/dashboard": typeof functions_dashboard;
+  "functions/department": typeof functions_department;
+  "functions/departments": typeof functions_departments;
+  "functions/enrollments": typeof functions_enrollments;
+  "functions/grades": typeof functions_grades;
+  "functions/instructors": typeof functions_instructors;
+  "functions/notifications": typeof functions_notifications;
+  "functions/programs": typeof functions_programs;
+  "functions/registrar": typeof functions_registrar;
+  "functions/schools": typeof functions_schools;
+  "functions/transcript": typeof functions_transcript;
+  "functions/users": typeof functions_users;
   "lib/aggregates/academicCalendarAggregate": typeof lib_aggregates_academicCalendarAggregate;
   "lib/aggregates/courseAggregate": typeof lib_aggregates_courseAggregate;
   "lib/aggregates/enrollmentAggregate": typeof lib_aggregates_enrollmentAggregate;
@@ -106,12 +112,6 @@ declare const fullApi: ApiFromModules<{
   "mutations/sectionMutations": typeof mutations_sectionMutations;
   "mutations/transcriptMutations": typeof mutations_transcriptMutations;
   "mutations/userMutations": typeof mutations_userMutations;
-  notifications: typeof notifications;
-  programs: typeof programs;
-  registrar: typeof registrar;
-  schools: typeof schools;
-  transcript: typeof transcript;
-  users: typeof users;
 }>;
 
 /**

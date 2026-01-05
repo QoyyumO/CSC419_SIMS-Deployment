@@ -4,10 +4,10 @@
  * Provides queries for admin dashboard statistics and activity logs.
  */
 
-import { query } from "./_generated/server";
+import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { validateSessionToken } from "./lib/session";
-import { computeFinalGrade } from "./lib/services/gradingService";
+import { validateSessionToken } from "../lib/session";
+import { computeFinalGrade } from "../lib/services/gradingService";
 
 /**
  * Get dashboard statistics

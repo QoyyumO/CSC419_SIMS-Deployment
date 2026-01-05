@@ -17,7 +17,7 @@ interface ProfileUpdateFormProps {
 
 export function ProfileUpdateForm({ onSuccess, onCancel }: ProfileUpdateFormProps) {
   const currentUser = useCurrentUser();
-  const updateProfileMutation = useMutation(api.users.updateProfile);
+  const updateProfileMutation = useMutation(api.functions.users.updateProfile);
 
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");

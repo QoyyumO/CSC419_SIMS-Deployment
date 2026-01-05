@@ -18,6 +18,7 @@ import {
   CalenderIcon,
   DocsIcon,
   BoxIcon,
+  CheckCircleIcon,
 } from '../icons';
 
 type NavItem = {
@@ -125,6 +126,11 @@ const AppSidebar: React.FC = () => {
             icon: <FileIcon />,
             name: 'Term Processing',
             path: '/processing',
+          },
+          {
+            icon: <CheckCircleIcon />,
+            name: 'Graduation',
+            path: '/graduation',
           },
         ]
       : []),

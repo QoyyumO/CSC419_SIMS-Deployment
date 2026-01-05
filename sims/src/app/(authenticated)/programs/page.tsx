@@ -29,7 +29,7 @@ export default function ProgramsPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   // Fetch programs
-  const programs = useQuery(api.programs.list) as Program[] | undefined;
+  const programs = useQuery(api.functions.programs.list) as Program[] | undefined;
 
   const isLoading = programs === undefined;
 

@@ -71,7 +71,7 @@ export default function SectionDetailPage() {
 
   // Fetch roster data
   const roster = useQuery(
-    api.instructors.getRoster,
+    api.functions.instructors.getRoster,
     sessionToken && sectionId
       ? { sectionId, token: sessionToken }
       : "skip"
@@ -79,13 +79,13 @@ export default function SectionDetailPage() {
 
   // Fetch assessments
   const assessments = useQuery(
-    api.assessments.getBySection,
+    api.functions.assessments.getBySection,
     sectionId ? { sectionId } : "skip"
   );
 
   // Fetch gradebook data to check which assessments have grades
   const gradebookData = useQuery(
-    api.grades.getBySection,
+    api.functions.grades.getBySection,
     sessionToken && sectionId
       ? { sectionId, token: sessionToken }
       : "skip"

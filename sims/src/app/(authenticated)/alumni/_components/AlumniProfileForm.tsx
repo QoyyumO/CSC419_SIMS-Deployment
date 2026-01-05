@@ -7,9 +7,27 @@ import { useMutation } from 'convex/react';
 import { api } from '@/lib/convex';
 import { useAuth } from '@/hooks/useAuth';
 
+type AlumniInitial = {
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+    address?: {
+      street?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      country?: string;
+    };
+  };
+  employmentStatus?: string;
+  currentEmployer?: string;
+  jobTitle?: string;
+  linkedInUrl?: string;
+};
+
 interface Props {
   alumniId: string;
-  initial?: any;
+  initial?: AlumniInitial;
   onSuccess?: () => void;
 }
 
@@ -27,6 +45,7 @@ export default function AlumniProfileForm({ alumniId, initial, onSuccess }: Prop
   const [linkedInUrl, setLinkedInUrl] = useState(initial?.linkedInUrl ?? '');
   const [loading, setLoading] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMutation = useMutation((api as any).alumni.updateAlumniProfile);
   const { user } = useAuth();
 
@@ -41,13 +60,17 @@ export default function AlumniProfileForm({ alumniId, initial, onSuccess }: Prop
 
     setLoading(true);
     try {
-      await updateMutation({ requesterUserId: user?._id ?? '', alumniId, updates: {
-        contactInfo: { email, phone, address: { street, city, state, postalCode, country } },
-        employmentStatus,
-        currentEmployer,
-        jobTitle,
-        linkedInUrl,
-      }} as any);
+      await updateMutation({
+        requesterUserId: user?._id ?? '',
+        alumniId,
+        updates: {
+          contactInfo: { email, phone, address: { street, city, state, postalCode, country } },
+          employmentStatus,
+          currentEmployer,
+          jobTitle,
+          linkedInUrl,
+        },
+      });
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error updating alumni profile', error);

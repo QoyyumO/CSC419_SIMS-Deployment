@@ -7,13 +7,21 @@ import { Table, TableHeader, TableBody, TableRow, TableCell } from '@/components
 import Loading from '@/components/loading/Loading';
 import Badge from '@/components/ui/badge/Badge';
 
+type Address = {
+  street?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+};
+
 type AlumniRow = {
   _id: Id<'alumniProfiles'>;
   name: string | null;
   graduationYear: number;
   department?: { _id: Id<'departments'>; name: string } | null;
   employmentStatus: string;
-  contactInfo: { email: string; phone: string; address?: any };
+  contactInfo: { email: string; phone: string; address?: Address };
 };
 
 interface AlumniTableProps {
@@ -22,8 +30,8 @@ interface AlumniTableProps {
 }
 
 export default function AlumniTable({ alumni, isLoading }: AlumniTableProps) {
-  const [sortKey, setSortKey] = useState<'name' | 'graduationYear' | 'department'>('graduationYear');
-  const [sortAsc, setSortAsc] = useState(false);
+  const [sortKey] = useState<'name' | 'graduationYear' | 'department'>('graduationYear');
+  const [sortAsc] = useState(false);
 
   if (isLoading) {
     return (

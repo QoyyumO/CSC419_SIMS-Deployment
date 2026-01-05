@@ -22,7 +22,7 @@ export default function NotificationDropdown() {
 
   // Fetch notifications
   const notifications = useQuery(
-    api.notifications.getMyNotifications,
+    api.functions.notifications.getMyNotifications,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as Array<{
     _id: string;
@@ -33,11 +33,11 @@ export default function NotificationDropdown() {
   }> | undefined;
 
   // Mutation to mark notification as read
-  const markAsRead = useMutation(api.notifications.markAsRead);
+  const markAsRead = useMutation(api.functions.notifications.markAsRead);
 
   // Fetch unread count
   const unreadCount = useQuery(
-    api.notifications.getUnreadCount,
+    api.functions.notifications.getUnreadCount,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as number | undefined;
 

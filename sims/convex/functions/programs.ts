@@ -4,10 +4,10 @@
  * Provides queries and mutations for fetching and managing academic programs.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
-import { NotFoundError } from "./lib/errors";
+import { Id } from "../_generated/dataModel";
+import { NotFoundError } from "../lib/errors";
 
 /**
  * List all programs with their department information

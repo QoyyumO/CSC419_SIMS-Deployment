@@ -34,13 +34,13 @@ export default function NotificationsPage() {
 
   // Fetch notifications
   const notifications = useQuery(
-    api.notifications.getMyNotifications,
+    api.functions.notifications.getMyNotifications,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as Notification[] | undefined;
 
   // Mutations
-  const markAsRead = useMutation(api.notifications.markAsRead);
-  const markMultipleAsRead = useMutation(api.notifications.markMultipleAsRead);
+  const markAsRead = useMutation(api.functions.notifications.markAsRead);
+  const markMultipleAsRead = useMutation(api.functions.notifications.markMultipleAsRead);
 
   // Filter notifications
   const filteredNotifications = useMemo(() => {

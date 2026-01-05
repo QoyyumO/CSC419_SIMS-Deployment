@@ -4,9 +4,9 @@
  * Provides queries for fetching transcript data and academic history.
  */
 
-import { query } from "./_generated/server";
+import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { validateSessionToken } from "./lib/session";
+import { validateSessionToken } from "../lib/session";
 
 // Note: convertPercentageToLetterGrade function removed as it's unused
 // If needed in the future, it can be re-added
