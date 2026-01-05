@@ -33,6 +33,9 @@ export default function GraduationPage() {
     name: string;
     studentNumber: string;
   } | null>(null);
+  const [isProcessingApproval, setIsProcessingApproval] = useState(false);
+  const [approvalSuccess, setApprovalSuccess] = useState<string | null>(null);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
   const { user } = useAuth();
 
   // Fetch students for graduation management
@@ -53,6 +56,11 @@ export default function GraduationPage() {
   // Mutation to check graduation eligibility
   const checkEligibilityMutation = useMutation(
     (api as any)['mutations/graduationMutations'].checkGraduationEligibility
+  );
+
+  // Mutation to process student graduation
+  const processGraduationMutation = useMutation(
+    (api as any)['mutations/graduationMutations'].processStudentGraduation
   );
 
   const isLoading = students === undefined;
@@ -91,10 +99,62 @@ export default function GraduationPage() {
     if (!selectedStudentForApproval || !user?._id) {
       return;
     }
-    // This will be implemented in the next task (task 6)
-    // For now, just close the modal
-    setApprovalModalOpen(false);
-    setSelectedStudentForApproval(null);
+
+    setIsProcessingApproval(true);
+    setApprovalError(null);
+    setApprovalSuccess(null);
+
+    try {
+      const result = await processGraduationMutation({
+        studentId: selectedStudentForApproval.studentId,
+        approverUserId: user._id,
+      });
+
+      // Show success message
+      setApprovalSuccess(
+        `Graduation approved successfully for ${selectedStudentForApproval.name}. Alumni profile created.`
+      );
+
+      // Clear eligibility result and close modal
+      setEligibilityResult(null);
+      setApprovalModalOpen(false);
+      setSelectedStudentForApproval(null);
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setApprovalSuccess(null);
+      }, 5000);
+    } catch (error) {
+      // Extract user-friendly error message
+      let errorMessage = 'Failed to approve graduation. Please try again.';
+      if (error instanceof Error) {
+        const rawMessage = error.message;
+        // Extract meaningful error message from Convex error format
+        const userMessageMatch = rawMessage.match(
+          /Student does not meet graduation requirements:([^]*?)(?:\s+at\s|$)/
+        );
+        if (userMessageMatch) {
+          errorMessage = `Cannot approve graduation: ${userMessageMatch[1].trim()}`;
+        } else {
+          // Try to extract other error messages
+          const cleanedMessage = rawMessage
+            .replace(/\[CONVEX[^\]]+\]\s*/g, '')
+            .replace(/\[Request ID:[^\]]+\]\s*/g, '')
+            .replace(/Server Error\s*/g, '')
+            .replace(/Uncaught Error:\s*/g, '')
+            .replace(/\s*at handler[^]*$/g, '')
+            .replace(/\s*Called by client[^]*$/g, '')
+            .trim();
+
+          if (cleanedMessage.length > 0 && cleanedMessage.length < 200) {
+            errorMessage = cleanedMessage;
+          }
+        }
+      }
+      setApprovalError(errorMessage);
+    } finally {
+      setIsProcessingApproval(false);
+    }
   };
 
   return (
@@ -106,6 +166,24 @@ export default function GraduationPage() {
         <PageBreadCrumb pageTitle="Graduation Management" />
 
         <div className="space-y-6">
+          {/* Success Alert */}
+          {approvalSuccess && (
+            <Alert
+              variant="success"
+              title="Graduation Approved"
+              message={approvalSuccess}
+            />
+          )}
+
+          {/* Error Alert */}
+          {approvalError && (
+            <Alert
+              variant="error"
+              title="Approval Failed"
+              message={approvalError}
+            />
+          )}
+
           {/* Eligibility Result Alert */}
           {eligibilityResult && (
             <Alert
@@ -172,12 +250,16 @@ export default function GraduationPage() {
           <GraduationApprovalModal
             isOpen={approvalModalOpen}
             onClose={() => {
-              setApprovalModalOpen(false);
-              setSelectedStudentForApproval(null);
+              if (!isProcessingApproval) {
+                setApprovalModalOpen(false);
+                setSelectedStudentForApproval(null);
+                setApprovalError(null);
+              }
             }}
             onConfirm={handleConfirmApproval}
             studentInfo={selectedStudentForApproval}
             eligibilityResult={eligibilityResult}
+            isProcessing={isProcessingApproval}
           />
         </div>
       </div>
