@@ -228,3 +228,86 @@ export const getAllStudentsForGraduation = query({
   },
 });
 
+/**
+ * Get all graduation records with approver and student information
+ * 
+ * Returns list of all graduation records with enriched information about
+ * the student and the approver. Only accessible to registrars.
+ */
+export const getAllGraduationRecords = query({
+  args: {
+    requesterUserId: v.id("users"),
+    studentId: v.optional(v.id("students")),
+    startDate: v.optional(v.number()),
+    endDate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    // Validate requester has authority (must be registrar)
+    await validateApproverAuthority(ctx.db, args.requesterUserId);
+
+    // Get all graduation records
+    let graduationRecords = await ctx.db.query("graduationRecords").collect();
+
+    // Filter by student if provided
+    if (args.studentId) {
+      graduationRecords = graduationRecords.filter(
+        (record) => record.studentId === args.studentId
+      );
+    }
+
+    // Filter by date range if provided
+    if (args.startDate) {
+      graduationRecords = graduationRecords.filter(
+        (record) => record.date >= args.startDate!
+      );
+    }
+    if (args.endDate) {
+      graduationRecords = graduationRecords.filter(
+        (record) => record.date <= args.endDate!
+      );
+    }
+
+    // Sort by date (most recent first)
+    graduationRecords.sort((a, b) => b.date - a.date);
+
+    // Enrich records with student and approver information
+    const enrichedRecords = await Promise.all(
+      graduationRecords.map(async (record) => {
+        const student = await ctx.db.get(record.studentId);
+        const approver = await ctx.db.get(record.approvedBy);
+        const department = student
+          ? await ctx.db.get(student.departmentId)
+          : null;
+
+        // Get student user for name
+        const studentUser = student ? await ctx.db.get(student.userId) : null;
+        const studentName = studentUser
+          ? `${studentUser.profile.firstName} ${studentUser.profile.lastName}`
+          : "Unknown";
+
+        const approverName = approver
+          ? `${approver.profile.firstName} ${approver.profile.lastName}`
+          : "Unknown";
+
+        // Get graduation year from date
+        const graduationYear = new Date(record.date).getFullYear();
+
+        return {
+          _id: record._id,
+          studentId: record.studentId,
+          studentName,
+          studentNumber: student?.studentNumber ?? "N/A",
+          department: department?.name ?? "N/A",
+          approvedBy: record.approvedBy,
+          approverName,
+          approverEmail: approver?.email ?? "N/A",
+          date: record.date,
+          graduationYear,
+        };
+      })
+    );
+
+    return enrichedRecords;
+  },
+});
+

@@ -13,6 +13,9 @@ import { useAuth } from '@/hooks/useAuth';
 import StudentsEligibilityTable from './_components/StudentsEligibilityTable';
 import Alert from '@/components/ui/alert/Alert';
 import GraduationApprovalModal from './_components/GraduationApprovalModal';
+import GraduationHistoryTable from './_components/GraduationHistoryTable';
+import Tabs from '@/components/ui/tabs/Tabs';
+import TabPane from '@/components/ui/tabs/TabPane';
 
 export default function GraduationPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,6 +55,16 @@ export default function GraduationPage() {
 
   // Fetch departments for filter
   const departments = useQuery(api.departments.list) as any[] | undefined;
+
+  // Fetch graduation records/history
+  const graduationRecords = useQuery(
+    (api as any)['mutations/graduationMutations'].getAllGraduationRecords,
+    user?._id
+      ? {
+          requesterUserId: user._id,
+        }
+      : 'skip'
+  ) as any[] | undefined;
 
   // Mutation to check graduation eligibility
   const checkEligibilityMutation = useMutation(
@@ -231,20 +244,35 @@ export default function GraduationPage() {
             </div>
           </ComponentCard>
 
-          {/* Students Table */}
-          <ComponentCard
-            title="Students"
-            desc="View and check graduation eligibility for students"
-          >
-            <StudentsEligibilityTable
-              students={students}
-              isLoading={isLoading}
-              onCheckEligibility={handleCheckEligibility}
-              checkingStudentId={checkingStudentId}
-              eligibilityResult={eligibilityResult}
-              onApproveGraduation={handleApproveGraduation}
-            />
-          </ComponentCard>
+          {/* Tabs for Students and History */}
+          <Tabs tabStyle="independent" justifyTabs="left">
+            <TabPane tab="Students">
+              <ComponentCard
+                title="Students"
+                desc="View and check graduation eligibility for students"
+              >
+                <StudentsEligibilityTable
+                  students={students}
+                  isLoading={isLoading}
+                  onCheckEligibility={handleCheckEligibility}
+                  checkingStudentId={checkingStudentId}
+                  eligibilityResult={eligibilityResult}
+                  onApproveGraduation={handleApproveGraduation}
+                />
+              </ComponentCard>
+            </TabPane>
+            <TabPane tab="Graduation History">
+              <ComponentCard
+                title="Graduation History"
+                desc="View all approved graduations and their audit trail"
+              >
+                <GraduationHistoryTable
+                  records={graduationRecords}
+                  isLoading={graduationRecords === undefined}
+                />
+              </ComponentCard>
+            </TabPane>
+          </Tabs>
 
           {/* Graduation Approval Modal */}
           <GraduationApprovalModal
