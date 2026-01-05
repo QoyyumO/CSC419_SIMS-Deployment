@@ -150,16 +150,18 @@ export default function GPACalculatorPage() {
     return Math.round(gpa * 100) / 100;
   }, [transcriptData, gradesData, selectedGrades]);
 
-  // Get status badge info
+  // Get status badge info based on Nigerian degree classification
   const getStatusInfo = (gpa: number) => {
-    if (gpa >= 4.5) {
-      return { label: "Dean's List", color: 'success' as const };
-    } else if (gpa < 1.5) {
-      return { label: 'Probation', color: 'error' as const };
-    } else if (gpa >= 3.5) {
-      return { label: 'Good Standing', color: 'info' as const };
+    if (gpa >= 4.5 && gpa <= 5.0) {
+      return { label: 'First Class', color: 'success' as const };
+    } else if (gpa >= 3.5 && gpa < 4.5) {
+      return { label: 'Second Class (Upper Division)', color: 'info' as const };
+    } else if (gpa >= 2.4 && gpa < 3.5) {
+      return { label: 'Second Class (Lower Division)', color: 'warning' as const };
+    } else if (gpa >= 1.5 && gpa < 2.4) {
+      return { label: 'Third Class', color: 'warning' as const };
     } else {
-      return { label: 'Satisfactory', color: 'warning' as const };
+      return { label: 'Probation', color: 'error' as const };
     }
   };
 
