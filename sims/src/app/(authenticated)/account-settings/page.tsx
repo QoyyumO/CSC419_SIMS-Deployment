@@ -33,7 +33,12 @@ export default function ProfilePage() {
   const isStudent = user?.roles.includes("student") ?? false;
 
   function AlumniProfileLink({ studentId }: { studentId: string }) {
-    const alumni = useQuery((api as any).alumni.getAlumniProfile, { studentId }) as any | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const alumni = useQuery((api as any).alumni.getAlumniProfile, { studentId }) as {
+      _id: string;
+      graduationYear: number;
+      contactInfo?: { email?: string; phone?: string };
+    } | undefined;
     if (!alumni) return null;
     return (
       <div className="mt-4">

@@ -6,26 +6,34 @@ import { api } from '@/lib/convex';
 import PageBreadCrumb from '@/components/common/PageBreadCrumb';
 import ComponentCard from '@/components/common/ComponentCard';
 import Input from '@/components/form/input/InputField';
-import Select from '@/components/form/Select';
 import AlumniTable from './_components/AlumniTable';
 import { useAuth } from '@/hooks/useAuth';
 import { RoleGuard } from '@/components/auth/RoleGuard';
+import { Id } from '@/lib/convex';
+
+type AlumniRow = {
+  _id: Id<'alumniProfiles'>;
+  name: string | null;
+  graduationYear: number;
+  department?: { _id: Id<'departments'>; name: string } | null;
+  employmentStatus: string;
+  contactInfo: { email: string; phone: string };
+};
 
 export default function AlumniPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [graduationYear, setGraduationYear] = useState<number | undefined>(undefined);
-  const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
   const { user } = useAuth();
 
   const alumni = useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (api as any).alumni.getAllAlumni,
     {
       requesterUserId: user?._id ?? '',
       searchTerm: searchQuery || undefined,
       graduationYear: graduationYear || undefined,
-      departmentId: departmentId || undefined,
     }
-  ) as any[] | undefined;
+  ) as AlumniRow[] | undefined;
 
   const isLoading = alumni === undefined;
 

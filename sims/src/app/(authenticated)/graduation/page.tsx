@@ -17,6 +17,36 @@ import GraduationHistoryTable from './_components/GraduationHistoryTable';
 import Tabs from '@/components/ui/tabs/Tabs';
 import TabPane from '@/components/ui/tabs/TabPane';
 
+type StudentRow = {
+  _id: Id<'students'>;
+  studentNumber: string;
+  name: string;
+  email: string;
+  department: { _id: Id<'departments'>; name: string } | null;
+  status: string;
+  level: string;
+  gpa: number;
+  totalCredits: number;
+};
+
+type Department = {
+  _id: Id<'departments'>;
+  name: string;
+};
+
+type GraduationRecord = {
+  _id: Id<'graduationRecords'>;
+  studentId: Id<'students'>;
+  studentName: string;
+  studentNumber: string;
+  department: string;
+  approvedBy: Id<'users'>;
+  approverName: string;
+  approverEmail: string;
+  date: number;
+  graduationYear: number;
+};
+
 export default function GraduationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
@@ -43,7 +73,8 @@ export default function GraduationPage() {
 
   // Fetch students for graduation management
   const students = useQuery(
-    (api as any)['mutations/graduationMutations'].getAllStudentsForGraduation,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (api as any)["mutations/graduationMutations"].getAllStudentsForGraduation,
     user?._id
       ? {
           requesterUserId: user._id,
@@ -51,29 +82,32 @@ export default function GraduationPage() {
           searchTerm: searchQuery || undefined,
         }
       : 'skip'
-  ) as any[] | undefined;
+  ) as StudentRow[] | undefined;
 
   // Fetch departments for filter
-  const departments = useQuery(api.departments.list) as any[] | undefined;
+  const departments = useQuery(api.departments.list) as Department[] | undefined;
 
   // Fetch graduation records/history
   const graduationRecords = useQuery(
-    (api as any)['mutations/graduationMutations'].getAllGraduationRecords,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (api as any)["mutations/graduationMutations"].getAllGraduationRecords,
     user?._id
       ? {
           requesterUserId: user._id,
         }
       : 'skip'
-  ) as any[] | undefined;
+  ) as GraduationRecord[] | undefined;
 
   // Mutation to check graduation eligibility
   const checkEligibilityMutation = useMutation(
-    (api as any)['mutations/graduationMutations'].checkGraduationEligibility
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (api as any)["mutations/graduationMutations"].checkGraduationEligibility
   );
 
   // Mutation to process student graduation
   const processGraduationMutation = useMutation(
-    (api as any)['mutations/graduationMutations'].processStudentGraduation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (api as any)["mutations/graduationMutations"].processStudentGraduation
   );
 
   const isLoading = students === undefined;
@@ -118,7 +152,7 @@ export default function GraduationPage() {
     setApprovalSuccess(null);
 
     try {
-      const result = await processGraduationMutation({
+      await processGraduationMutation({
         studentId: selectedStudentForApproval.studentId,
         approverUserId: user._id,
       });

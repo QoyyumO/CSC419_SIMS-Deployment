@@ -161,6 +161,7 @@ export const getProfile = query({
         return {
           ...baseProfile,
           student: {
+            _id: student._id,
             studentNumber: student.studentNumber,
             admissionYear: student.admissionYear,
             level: student.level,

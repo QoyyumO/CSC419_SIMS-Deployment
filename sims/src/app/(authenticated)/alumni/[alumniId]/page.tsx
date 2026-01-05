@@ -5,7 +5,6 @@ import PageBreadCrumb from '@/components/common/PageBreadCrumb';
 import ComponentCard from '@/components/common/ComponentCard';
 import AlumniProfileForm from '../_components/AlumniProfileForm';
 import { RoleGuard } from '@/components/auth/RoleGuard';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function AlumniDetailPage({ params }: { params: { alumniId: string } }) {
   return (
@@ -18,10 +17,24 @@ export default function AlumniDetailPage({ params }: { params: { alumniId: strin
   );
 }
 
+type AlumniProfile = {
+  _id: string;
+  name: string | null;
+  graduationYear: number;
+  contactInfo?: {
+    email?: string;
+    phone?: string;
+  };
+  employmentStatus: string;
+  currentEmployer?: string;
+  jobTitle?: string;
+  linkedInUrl?: string;
+};
+
 function AlumniDetailClient({ alumniId }: { alumniId: string }) {
-  const profile = useQuery((api as any).alumni.getAlumniById, { alumniId }) as any | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile = useQuery((api as any).alumni.getAlumniById, { alumniId }) as AlumniProfile | undefined;
   const isLoading = profile === undefined;
-  const { user } = useAuth();
 
   if (isLoading) return <div className="py-12">Loading...</div>;
   if (!profile) return <div className="py-12">Alumni profile not found</div>;

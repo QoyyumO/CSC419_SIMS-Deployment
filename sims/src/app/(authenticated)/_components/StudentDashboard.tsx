@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/convex";
@@ -104,12 +104,26 @@ export default function StudentDashboardView() {
   const dropCourseMutation = useMutation(api["mutations/enrollmentMutations"].dropCourse);
 
   // Get student record to get studentId for graduation check
+  type UserProfile = {
+    student?: {
+      _id: Id<'students'>;
+      studentNumber: string;
+      admissionYear: number;
+      level: string;
+      status: string;
+      department?: {
+        _id: Id<'departments'>;
+        name: string;
+      } | null;
+    };
+  };
+
   const studentRecord = useQuery(
     api.users.getProfile,
     user?._id ? { userId: user._id } : "skip"
-  ) as any | undefined;
+  ) as UserProfile | undefined;
 
-  const studentId = studentRecord?.student?._id as Id<'students'> | undefined;
+  const studentId = studentRecord?.student?._id;
 
   // State for graduation eligibility
   const [graduationEligibility, setGraduationEligibility] = useState<{
@@ -122,8 +136,10 @@ export default function StudentDashboardView() {
   } | null>(null);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
 
-  // @ts-expect-error - Convex API path with slashes
-  const checkEligibilityMutation = useMutation((api as any)['mutations/graduationMutations'].checkGraduationEligibility);
+  const checkEligibilityMutation = useMutation(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (api as any)["mutations/graduationMutations"].checkGraduationEligibility
+  );
 
   // Check graduation eligibility when studentId is available
   useEffect(() => {

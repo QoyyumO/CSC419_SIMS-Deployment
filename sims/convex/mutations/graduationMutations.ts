@@ -14,7 +14,6 @@ import {
   runDegreeAudit,
 } from "../lib/services/graduationService";
 import { logGraduationApproved, logAlumniProfileCreated } from "../lib/services/auditLogService";
-import { Id } from "../_generated/dataModel";
 
 /**
  * Operation: Process a Student's Graduation

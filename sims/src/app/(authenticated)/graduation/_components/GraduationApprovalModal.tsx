@@ -47,7 +47,7 @@ export default function GraduationApprovalModal({
                 You are about to approve graduation for this student. This action will:
               </p>
               <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 mb-4 space-y-1">
-                <li>Update student status to "graduated"</li>
+                <li>Update student status to &quot;graduated&quot;</li>
                 <li>Create a graduation record</li>
                 <li>Create an alumni profile</li>
                 <li>Record this action in the audit log</li>
