@@ -62,15 +62,15 @@ export default function SectionsPage() {
   const [publishErrorMessage, setPublishErrorMessage] = useState<string | null>(null);
   const [assignmentToastMessage, setAssignmentToastMessage] = useState<string | null>(null);
 
-  const publishSections = useMutation(api.department.publishSections);
+  const publishSections = useMutation(api.functions.department.publishSections);
 
   // Fetch current or next active term
-  const currentOrNextTerm = useQuery(api.department.getCurrentOrNextTerm) as Term | null | undefined;
+  const currentOrNextTerm = useQuery(api.functions.department.getCurrentOrNextTerm) as Term | null | undefined;
 
   // Fetch assignment report for CSV export
   const effectiveTermId = selectedTermId || currentOrNextTerm?._id;
   const assignmentReport = useQuery(
-    api.department.getAssignmentReport,
+    api.functions.department.getAssignmentReport,
     sessionToken && effectiveTermId
       ? {
           token: sessionToken,
@@ -82,7 +82,7 @@ export default function SectionsPage() {
   ) as Array<{ Term: string; Session: string; Course: string; InstructorName: string; Capacity: number }> | undefined;
 
   // Fetch terms
-  const terms = useQuery(api.department.getTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.department.getTerms) as Term[] | undefined;
 
   // Set default term to current/next term if no term is selected
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function SectionsPage() {
 
   // Fetch sections - use selectedTermId or currentOrNextTerm
   const sections = useQuery(
-    api.department.getSections,
+    api.functions.department.getSections,
     sessionToken && effectiveTermId
       ? {
           token: sessionToken,

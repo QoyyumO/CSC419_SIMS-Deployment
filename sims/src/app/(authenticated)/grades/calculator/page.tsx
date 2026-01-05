@@ -74,7 +74,7 @@ export default function GPACalculatorPage() {
 
   // Fetch transcript data (current GPA and credits from transcript table)
   const transcriptData = useQuery(
-    api.transcript.getFullHistory,
+    api.functions.transcript.getFullHistory,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as { 
     cumulativeGPA: number;
@@ -92,7 +92,7 @@ export default function GPACalculatorPage() {
 
   // Fetch active grades
   const gradesData = useQuery(
-    api.grades.getMyActiveGrades,
+    api.functions.grades.getMyActiveGrades,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as ActiveGrade[] | undefined | Error;
 

@@ -72,13 +72,13 @@ export default function CreateSectionModal({
 
   // Fetch courses and terms
   const courses = useQuery(
-    api.department.getDepartmentCourses,
+    api.functions.department.getDepartmentCourses,
     sessionToken ? { token: sessionToken } : "skip"
   ) as Course[] | undefined;
 
-  const terms = useQuery(api.department.getTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.department.getTerms) as Term[] | undefined;
 
-  const createSection = useMutation(api.department.createSection);
+  const createSection = useMutation(api.functions.department.createSection);
 
   // Update course search query when a course is selected
   useEffect(() => {

@@ -20,7 +20,7 @@ export default function ProfilePage() {
 
   // Fetch profile data with student information if user is a student
   const profileData = useQuery(
-    api.users.getProfile,
+    api.functions.users.getProfile,
     user?._id ? { userId: user._id } : "skip"
   );
 

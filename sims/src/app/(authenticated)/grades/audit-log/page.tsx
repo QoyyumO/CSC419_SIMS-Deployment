@@ -58,7 +58,7 @@ export default function GradeAuditLogPage() {
 
   // Fetch audit log entries
   const auditLogs = useQuery(
-    api.registrar.getGradeAuditLog,
+    api.functions.registrar.getGradeAuditLog,
     isRegistrar && sessionToken
       ? {
           token: sessionToken,
@@ -69,7 +69,7 @@ export default function GradeAuditLogPage() {
 
   // Fetch sections for filter
   const sectionsStatus = useQuery(
-    api.registrar.getAllSectionsStatus,
+    api.functions.registrar.getAllSectionsStatus,
     isRegistrar && sessionToken
       ? {
           token: sessionToken,

@@ -4,9 +4,9 @@
  * Provides queries and mutations for fetching and managing user notifications.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { validateSessionToken } from "./lib/session";
+import { validateSessionToken } from "../lib/session";
 
 /**
  * Get notifications for the current user

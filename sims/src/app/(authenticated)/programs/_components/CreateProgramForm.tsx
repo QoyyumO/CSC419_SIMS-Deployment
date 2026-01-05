@@ -47,11 +47,11 @@ export default function CreateProgram({ isOpen, onClose, onSuccess }: CreateProg
     requiredCourses?: string;
   }>({});
 
-  const createProgramMutation = useMutation(api.programs.create);
+  const createProgramMutation = useMutation(api.functions.programs.create);
   
   // Fetch departments and courses for dropdowns
-  const departments = useQuery(api.departments.list) as Department[] | undefined;
-  const courses = useQuery(api.courses.listPublic, {}) as Course[] | undefined;
+  const departments = useQuery(api.functions.departments.list) as Department[] | undefined;
+  const courses = useQuery(api.functions.courses.listPublic, {}) as Course[] | undefined;
 
   const validate = (): boolean => {
     const errors: typeof validationErrors = {};

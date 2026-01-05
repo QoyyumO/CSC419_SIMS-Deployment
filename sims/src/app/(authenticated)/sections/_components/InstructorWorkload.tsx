@@ -31,12 +31,12 @@ interface InstructorWorkloadProps {
 
 export default function InstructorWorkload({ sessionToken, selectedTermId }: InstructorWorkloadProps) {
   // Fetch current or next active term if no term is provided
-  const currentOrNextTerm = useQuery(api.department.getCurrentOrNextTerm) as Term | null | undefined;
+  const currentOrNextTerm = useQuery(api.functions.department.getCurrentOrNextTerm) as Term | null | undefined;
   const effectiveTermId = selectedTermId || currentOrNextTerm?._id;
 
   // Fetch instructor workload
   const instructorWorkloads = useQuery(
-    api.department.getInstructorWorkload,
+    api.functions.department.getInstructorWorkload,
     sessionToken && effectiveTermId
       ? {
           token: sessionToken,
@@ -46,7 +46,7 @@ export default function InstructorWorkload({ sessionToken, selectedTermId }: Ins
   ) as InstructorWorkload[] | undefined;
 
   // Fetch terms for display
-  const terms = useQuery(api.department.getTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.department.getTerms) as Term[] | undefined;
 
   const isLoading = instructorWorkloads === undefined || terms === undefined;
 

@@ -66,13 +66,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Query current user with stored session token
   const currentUser = useQuery(
-    api.auth.getCurrentUser,
+    api.functions.auth.getCurrentUser,
     storedToken ? { token: storedToken } : "skip"
   );
 
   // Mutations
-  const loginMutation = useMutation(api.auth.login);
-  const logoutMutation = useMutation(api.auth.logout);
+  const loginMutation = useMutation(api.functions.auth.login);
+  const logoutMutation = useMutation(api.functions.auth.logout);
 
   // Derive authentication state directly from query result
   const { isAuthenticated, user } = useMemo(() => {

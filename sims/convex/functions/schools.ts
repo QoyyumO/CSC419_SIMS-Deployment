@@ -4,9 +4,9 @@
  * Provides queries and mutations for fetching and creating schools.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { validateCreateSchool } from "./lib/aggregates";
+import { validateCreateSchool } from "../lib/aggregates";
 
 /**
  * List all schools

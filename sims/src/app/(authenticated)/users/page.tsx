@@ -37,7 +37,7 @@ export default function UsersPage() {
 
   // Fetch users with filters
   const users = useQuery(
-    api.users.list,
+    api.functions.users.list,
     {
       searchTerm: searchQuery || undefined,
       roleFilter: selectedRole || undefined,

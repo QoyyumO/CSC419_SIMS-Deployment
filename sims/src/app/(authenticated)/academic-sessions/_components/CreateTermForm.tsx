@@ -42,7 +42,7 @@ export default function CreateTermForm({ isOpen, onClose, onSuccess, sessions }:
   }>({});
   const [datePickerKey, setDatePickerKey] = useState(0);
 
-  const createTermMutation = useMutation(api.academicSessions.createTerm);
+  const createTermMutation = useMutation(api.functions.academicSessions.createTerm);
 
   // Reset form when modal closes
   useEffect(() => {

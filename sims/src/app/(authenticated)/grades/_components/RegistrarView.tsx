@@ -70,7 +70,7 @@ export default function RegistrarView({ sessionToken }: RegistrarViewProps) {
 
   // Fetch sections status
   const sectionsStatus = useQuery(
-    api.registrar.getAllSectionsStatus,
+    api.functions.registrar.getAllSectionsStatus,
     sessionToken
       ? {
           token: sessionToken,
@@ -81,16 +81,16 @@ export default function RegistrarView({ sessionToken }: RegistrarViewProps) {
   ) as SectionStatus[] | undefined | Error;
 
   // Fetch departments for filter
-  const departments = useQuery(api.departments.list) as Department[] | undefined;
+  const departments = useQuery(api.functions.departments.list) as Department[] | undefined;
 
   // Fetch terms for filter
-  const terms = useQuery(api.department.getTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.department.getTerms) as Term[] | undefined;
 
   // Mutation for sending reminder
-  const sendReminder = useMutation(api.registrar.sendReminder);
+  const sendReminder = useMutation(api.functions.registrar.sendReminder);
 
   // Mutation for unlocking section
-  const setSectionLock = useMutation(api.registrar.setSectionLock);
+  const setSectionLock = useMutation(api.functions.registrar.setSectionLock);
 
   // State for unlock modal
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);

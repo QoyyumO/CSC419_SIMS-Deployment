@@ -37,7 +37,7 @@ export default function InstructorDashboard() {
 
   // Fetch instructor dashboard data
   const sections = useQuery(
-    api.instructors.getDashboard,
+    api.functions.instructors.getDashboard,
     sessionToken ? { token: sessionToken } : "skip"
   ) as Section[] | undefined;
 

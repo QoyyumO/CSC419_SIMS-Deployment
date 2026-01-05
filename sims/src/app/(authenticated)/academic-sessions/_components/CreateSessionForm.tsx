@@ -31,7 +31,7 @@ export default function CreateSessionForm({ isOpen, onClose, onSuccess }: Create
   }>({});
   const [datePickerKey, setDatePickerKey] = useState(0);
 
-  const createSessionMutation = useMutation(api.academicSessions.createSession);
+  const createSessionMutation = useMutation(api.functions.academicSessions.createSession);
 
   // Reset form when modal closes
   useEffect(() => {

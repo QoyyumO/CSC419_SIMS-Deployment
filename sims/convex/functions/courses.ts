@@ -4,10 +4,10 @@
  * Provides queries for fetching courses with filtering and search capabilities.
  */
 
-import { query } from "./_generated/server";
+import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
-import { validateSessionToken } from "./lib/session";
+import { Id } from "../_generated/dataModel";
+import { validateSessionToken } from "../lib/session";
 
 /**
  * List public courses with filtering and search

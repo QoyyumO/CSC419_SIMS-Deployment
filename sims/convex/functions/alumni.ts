@@ -1,8 +1,8 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { NotFoundError, ValidationError } from "./lib/errors";
-import { validateApproverAuthority } from "./lib/aggregates";
-import { logAlumniProfileCreated, logAlumniProfileUpdated } from "./lib/services/auditLogService";
+import { NotFoundError, ValidationError } from "../lib/errors";
+import { validateApproverAuthority } from "../lib/aggregates";
+import { logAlumniProfileCreated, logAlumniProfileUpdated } from "../lib/services/auditLogService";
 
 /**
  * Get Alumni Profile by studentId

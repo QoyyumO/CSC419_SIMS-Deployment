@@ -5,11 +5,11 @@
  * Restricted to users with role === 'department_head'.
  */
 
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
-import { validateSessionToken } from "./lib/session";
-import { NotFoundError, ValidationError } from "./lib/errors";
-import { Id } from "./_generated/dataModel";
+import { validateSessionToken } from "../lib/session";
+import { NotFoundError, ValidationError } from "../lib/errors";
+import { Id } from "../_generated/dataModel";
 
 /**
  * Get dashboard statistics for department head

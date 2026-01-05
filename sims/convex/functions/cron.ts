@@ -5,8 +5,8 @@
  */
 
 import { cronJobs } from "convex/server";
-import { internal } from "./_generated/api";
-import { internalMutation } from "./_generated/server";
+import { internal } from "../_generated/api";
+import { internalMutation } from "../_generated/server";
 
 /**
  * Update sections with expired enrollment deadlines
@@ -55,6 +55,6 @@ crons.hourly(
   {
     minuteUTC: 0, // Run at the start of each hour (minute 0)
   },
-  internal.cron.updateExpiredEnrollmentDeadlines
+  internal.functions.cron.updateExpiredEnrollmentDeadlines
 );
 

@@ -4,13 +4,13 @@
  * Transactional operations for enrollment management including final grade posting.
  */
 
-import { mutation } from "./_generated/server";
+import { mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
-import { InvariantViolationError, NotFoundError } from "./lib/errors";
-import { validateSessionToken } from "./lib/session";
-import { GradeValue } from "./lib/aggregates/types";
-import { addEnrollmentToTranscript } from "./lib/services/transcriptService";
+import { Id } from "../_generated/dataModel";
+import { InvariantViolationError, NotFoundError } from "../lib/errors";
+import { validateSessionToken } from "../lib/session";
+import { GradeValue } from "../lib/aggregates/types";
+import { addEnrollmentToTranscript } from "../lib/services/transcriptService";
 
 /**
  * Converts percentage to letter grade and grade point using the new mapping:

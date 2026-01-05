@@ -4,9 +4,9 @@
  * Provides queries and mutations for fetching and creating departments with their associated school information.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { validateDepartmentOwnership, NotFoundError } from "./lib/aggregates";
+import { validateDepartmentOwnership, NotFoundError } from "../lib/aggregates";
 
 /**
  * List all departments with their school names

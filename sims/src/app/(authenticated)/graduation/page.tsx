@@ -85,7 +85,7 @@ export default function GraduationPage() {
   ) as StudentRow[] | undefined;
 
   // Fetch departments for filter
-  const departments = useQuery(api.departments.list) as Department[] | undefined;
+  const departments = useQuery(api.functions.departments.list) as Department[] | undefined;
 
   // Fetch graduation records/history
   const graduationRecords = useQuery(

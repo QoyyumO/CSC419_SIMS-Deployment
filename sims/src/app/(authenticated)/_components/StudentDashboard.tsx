@@ -71,13 +71,13 @@ export default function StudentDashboardView() {
 
   // Fetch student stats
   const stats = useQuery(
-    api.dashboard.getStudentStats,
+    api.functions.dashboard.getStudentStats,
     sessionToken ? { token: sessionToken } : "skip"
   ) as StudentStats | undefined;
 
   // Fetch transcript data to get the official GPA from transcript table
   const transcriptData = useQuery(
-    api.transcript.getFullHistory,
+    api.functions.transcript.getFullHistory,
     sessionToken ? { token: sessionToken } : "skip"
   ) as {
     cumulativeGPA: number;
@@ -119,7 +119,7 @@ export default function StudentDashboardView() {
   };
 
   const studentRecord = useQuery(
-    api.users.getProfile,
+    api.functions.users.getProfile,
     user?._id ? { userId: user._id } : "skip"
   ) as UserProfile | undefined;
 

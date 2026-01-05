@@ -29,7 +29,7 @@ interface UsersTableProps {
 }
 
 export default function UsersTable({ users, isLoading }: UsersTableProps) {
-  const toggleStatusMutation = useMutation(api.users.toggleStatus);
+  const toggleStatusMutation = useMutation(api.functions.users.toggleStatus);
 
   const handleToggleStatus = async (userId: Id<'users'>) => {
     try {

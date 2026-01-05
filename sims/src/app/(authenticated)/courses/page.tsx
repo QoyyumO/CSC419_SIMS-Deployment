@@ -39,7 +39,7 @@ export default function CoursesPage() {
   // Fetch courses with search filter
   // Note: Courses are automatically filtered by student's department and level in the backend
   const courses = useQuery(
-    api.courses.listPublic,
+    api.functions.courses.listPublic,
     sessionToken
       ? {
           token: sessionToken,

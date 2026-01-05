@@ -51,17 +51,17 @@ export default function TermPlanner({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch terms
-  const terms = useQuery(api.department.getTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.department.getTerms) as Term[] | undefined;
 
   // Fetch courses for bulk create
   const courses = useQuery(
-    api.department.getDepartmentCourses,
+    api.functions.department.getDepartmentCourses,
     sessionToken ? { token: sessionToken } : 'skip'
   ) as Course[] | undefined;
 
   // Mutations
-  const bulkCreateSections = useMutation(api.department.bulkCreateSections);
-  const cloneSectionsFromTerm = useMutation(api.department.cloneSectionsFromTerm);
+  const bulkCreateSections = useMutation(api.functions.department.bulkCreateSections);
+  const cloneSectionsFromTerm = useMutation(api.functions.department.cloneSectionsFromTerm);
 
   // Filter terms to show only upcoming terms (startDate > now)
   // Use useState to avoid calling Date.now() during render

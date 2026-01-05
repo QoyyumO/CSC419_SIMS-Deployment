@@ -27,7 +27,7 @@ export default function DepartmentsPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   // Fetch departments
-  const departments = useQuery(api.departments.list) as Department[] | undefined;
+  const departments = useQuery(api.functions.departments.list) as Department[] | undefined;
 
   const isLoading = departments === undefined;
 

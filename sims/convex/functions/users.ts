@@ -5,12 +5,12 @@
  * user lookup, and role-based filtering.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { NotFoundError, ValidationError } from "./lib/errors";
-import { validateUpdateUser, validateCreateUser } from "./lib/aggregates";
-import { UserRole } from "./lib/aggregates/types";
-import { createSession } from "./lib/session";
+import { NotFoundError, ValidationError } from "../lib/errors";
+import { validateUpdateUser, validateCreateUser } from "../lib/aggregates";
+import { UserRole } from "../lib/aggregates/types";
+import { createSession } from "../lib/session";
 
 /**
  * Hash a password using Web Crypto API (PBKDF2)

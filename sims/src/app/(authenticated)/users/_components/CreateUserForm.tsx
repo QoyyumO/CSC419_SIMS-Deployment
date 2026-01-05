@@ -64,8 +64,8 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
     level?: string;
   }>({});
 
-  const createUserMutation = useMutation(api.users.createUser);
-  const departments = useQuery(api.departments.list);
+  const createUserMutation = useMutation(api.functions.users.createUser);
+  const departments = useQuery(api.functions.departments.list);
 
   const isStudentRole = formData.role === 'student';
   const isInstructorRole = formData.role === 'instructor';

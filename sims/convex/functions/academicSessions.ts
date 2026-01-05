@@ -5,9 +5,9 @@
  * Admin-only operations.
  */
 
-import { query, mutation } from "./_generated/server";
+import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { validateCreateAcademicSession, validateCreateTerm } from "./lib/aggregates/academicCalendarAggregate";
+import { validateCreateAcademicSession, validateCreateTerm } from "../lib/aggregates/academicCalendarAggregate";
 
 /**
  * List all academic sessions

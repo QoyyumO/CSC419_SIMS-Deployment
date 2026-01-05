@@ -4,9 +4,9 @@
  * Provides queries for instructor dashboard and class roster management.
  */
 
-import { query } from "./_generated/server";
+import { query } from "../_generated/server";
 import { v } from "convex/values";
-import { validateSessionToken } from "./lib/session";
+import { validateSessionToken } from "../lib/session";
 
 /**
  * Get instructor dashboard data

@@ -51,10 +51,10 @@ export default function ProcessingPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch terms
-  const terms = useQuery(api.academicSessions.listTerms) as Term[] | undefined;
+  const terms = useQuery(api.functions.academicSessions.listTerms) as Term[] | undefined;
 
   // Process term end mutation
-  const processTermEnd = useMutation(api.registrar.processTermEnd);
+  const processTermEnd = useMutation(api.functions.registrar.processTermEnd);
 
   // Term options for dropdown
   const termOptions =

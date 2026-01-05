@@ -39,8 +39,8 @@ export default function AcademicSessionsPage() {
   const [successMessage, setSuccessMessage] = useState('');
   
   // Fetch sessions and terms
-  const sessions = useQuery(api.academicSessions.listSessions) as AcademicSession[] | undefined;
-  const terms = useQuery(api.academicSessions.listTerms) as Term[] | undefined;
+  const sessions = useQuery(api.functions.academicSessions.listSessions) as AcademicSession[] | undefined;
+  const terms = useQuery(api.functions.academicSessions.listTerms) as Term[] | undefined;
 
   const isLoading = sessions === undefined || terms === undefined;
 

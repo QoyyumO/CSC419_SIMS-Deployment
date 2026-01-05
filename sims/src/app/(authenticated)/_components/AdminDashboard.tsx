@@ -22,8 +22,8 @@ type ActivityLog = {
 };
 
 export default function AdminDashboardOverview() {
-  const stats = useQuery(api.dashboard.getStats);
-  const recentActivity = useQuery(api.dashboard.getRecentActivity) as ActivityLog[] | undefined;
+  const stats = useQuery(api.functions.dashboard.getStats);
+  const recentActivity = useQuery(api.functions.dashboard.getRecentActivity) as ActivityLog[] | undefined;
 
   const isLoading = stats === undefined || recentActivity === undefined;
 

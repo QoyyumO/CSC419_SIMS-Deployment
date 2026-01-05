@@ -10,7 +10,7 @@ import Alert from "@/components/ui/alert/Alert";
 import Loading from "@/components/loading/Loading";
 
 export function ForgotPasswordForm() {
-  const requestReset = useMutation(api.auth.requestPasswordReset);
+  const requestReset = useMutation(api.functions.auth.requestPasswordReset);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
