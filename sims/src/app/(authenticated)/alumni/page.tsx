@@ -23,16 +23,18 @@ type AlumniRow = {
 export default function AlumniPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [graduationYear, setGraduationYear] = useState<number | undefined>(undefined);
-  const { user } = useAuth();
-
+  const { user, hasAnyRole } = useAuth();
+  const hasRequiredRole = hasAnyRole(["admin", "registrar"]);
+  
   const alumni = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).alumni.getAllAlumni,
-    {
-      requesterUserId: user?._id ?? '',
-      searchTerm: searchQuery || undefined,
-      graduationYear: graduationYear || undefined,
-    }
+    api.functions.alumni.getAllAlumni,
+    user?._id && hasRequiredRole
+      ? {
+          requesterUserId: user._id,
+          searchTerm: searchQuery || undefined,
+          graduationYear: graduationYear || undefined,
+        }
+      : 'skip'
   ) as AlumniRow[] | undefined;
 
   const isLoading = alumni === undefined;
