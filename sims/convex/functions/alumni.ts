@@ -1,8 +1,35 @@
 import { query, mutation } from "../_generated/server";
 import { v } from "convex/values";
-import { NotFoundError, ValidationError } from "../lib/errors";
+import { NotFoundError, ValidationError, InvariantViolationError } from "../lib/errors";
 import { validateApproverAuthority } from "../lib/aggregates";
 import { logAlumniProfileCreated, logAlumniProfileUpdated } from "../lib/services/auditLogService";
+import { DatabaseReader } from "../_generated/server";
+import { Id } from "../_generated/dataModel";
+import { UserRole } from "../lib/aggregates/types";
+
+/**
+ * Validates that user has admin or registrar role for alumni management
+ */
+async function validateAlumniAccess(
+  db: DatabaseReader,
+  userId: Id<"users">
+): Promise<void> {
+  const user = await db.get(userId);
+  if (!user) {
+    throw new NotFoundError("User", userId);
+  }
+
+  const allowedRoles: UserRole[] = ["admin", "registrar"];
+  const hasAccess = (user.roles as UserRole[]).some((role: UserRole) => allowedRoles.includes(role));
+
+  if (!hasAccess) {
+    throw new InvariantViolationError(
+      "AlumniAccess",
+      "Authorization",
+      `User '${userId}' does not have access to alumni management. Required roles: ${allowedRoles.join(", ")}`
+    );
+  }
+}
 
 /**
  * Get Alumni Profile by studentId
@@ -157,11 +184,11 @@ export const updateAlumniProfile = mutation({
     const user = await ctx.db.get(args.requesterUserId);
     if (!user) throw new NotFoundError("User", args.requesterUserId);
 
-    // Allow if requester is the student user or approver
+    // Allow if requester is the student user or admin/registrar
     const isOwner = student.userId && student.userId.toString() === args.requesterUserId.toString();
     if (!isOwner) {
-      // Validate approver authority (admin/registrar)
-      await validateApproverAuthority(ctx.db, args.requesterUserId);
+      // Validate admin/registrar access
+      await validateAlumniAccess(ctx.db, args.requesterUserId);
     }
 
     const patch: Record<string, unknown> = {};
@@ -194,7 +221,7 @@ export const getAllAlumni = query({
     searchTerm: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await validateApproverAuthority(ctx.db, args.requesterUserId);
+    await validateAlumniAccess(ctx.db, args.requesterUserId);
 
     let alumni = await ctx.db.query("alumniProfiles").collect();
 
@@ -266,7 +293,7 @@ export const searchAlumni = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await validateApproverAuthority(ctx.db, args.requesterUserId);
+    await validateAlumniAccess(ctx.db, args.requesterUserId);
 
     let alumni = await ctx.db.query("alumniProfiles").collect();
 
