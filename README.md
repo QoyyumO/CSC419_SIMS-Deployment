@@ -1,11 +1,9 @@
 # SIMS & E-learning Project
 
 ## Branch Naming Strategy
-- Feature branches: feature/dev_inititals/task_id
-- Bugfix branches: bugfix/dev_inititals/task_id
+- Branches: CSC-XX-linear-issue-title
 
 ## Repo conventions
-- Branches: `feature/*`, `bugfix/*`
 - Work flow: Task → branch → PR → Review → Merge
 - All PRs must:
   - Link to a task (`Closes #`)
