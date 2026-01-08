@@ -109,13 +109,6 @@ export default function NotificationDropdown() {
     }
   };
 
-  const recentNotifications = useQuery(api.queries.recentNotifications) || [];
-  const grouped = recentNotifications.reduce((acc: any, n: any) => {
-    acc[n.type] = acc[n.type] || [];
-    acc[n.type].push(n);
-    return acc;
-  }, {});
-
   return (
     <div className="relative">
       <button

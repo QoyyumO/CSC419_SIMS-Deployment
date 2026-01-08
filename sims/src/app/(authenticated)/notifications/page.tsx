@@ -162,9 +162,6 @@ export default function NotificationsPage() {
     );
   }
 
-  const types = Array.from(new Set(notifications.map((n: any) => n.type)));
-  const filtered = filter ? notifications.filter((n: any) => n.type === filter) : notifications;
-
   return (
     <div>
       <PageBreadCrumb pageTitle="Notifications" />

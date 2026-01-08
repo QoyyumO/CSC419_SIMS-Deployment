@@ -154,6 +154,10 @@ export default defineSchema({
       lastName: v.string(),
     }),
     active: v.optional(v.boolean()),
+    notificationPreferences: v.optional(v.object({
+      email: v.optional(v.boolean()),
+      frequency: v.optional(v.string()), // "immediate", "daily", "weekly"
+    })),
   })
     .index("by_email", ["email"]),
 

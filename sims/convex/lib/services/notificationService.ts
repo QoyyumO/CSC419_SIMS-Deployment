@@ -1,6 +1,7 @@
 // ...existing code...
 import { format } from "date-fns";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = any; // replace with your Convex DB type if available
 
 const templates = {
@@ -19,7 +20,7 @@ async function sendEmailMock(userId: string, subject: string, body: string) {
   console.info(`[Email mock] to=${userId} subject=${subject}\n${body}`);
 }
 
-export async function sendNotification(db: DB, userId: string, message: string, type: string, metadata?: any) {
+export async function sendNotification(db: DB, userId: string, message: string, type: string, metadata?: Record<string, unknown>) {
   const payload = {
     userId,
     message,
@@ -76,8 +77,12 @@ export async function sendGradeNotification(db: DB, enrollmentId: string, assess
   });
 }
 
-export async function sendDeadlineReminder(db: DB, userId: string, deadlineType: string, deadlineDate: Date, metadata?: any) {
-  const message = templates.deadlineReminder({ deadlineType, deadlineDate, itemTitle: metadata?.title });
+export async function sendDeadlineReminder(db: DB, userId: string, deadlineType: string, deadlineDate: Date, metadata?: Record<string, unknown>) {
+  const message = templates.deadlineReminder({ 
+    deadlineType, 
+    deadlineDate, 
+    itemTitle: metadata?.title as string | undefined 
+  });
   return sendNotification(db, userId, message, "deadline", { deadlineType, deadlineDate, ...metadata });
 }
 
@@ -87,7 +92,7 @@ export async function sendEnrollmentDeadlineReminder(db: DB, sectionId: string) 
   if (!section) return null;
   // Example: find students interested/enrollable — replace with your logic
   const interested = await db.query("usersBySectionInterest", { sectionId });
-  const promises = interested.map((user: any) =>
+  const promises = interested.map((user: { id: string }) =>
     sendDeadlineReminder(db, user.id, "Enrollment deadline", new Date(section.enrollmentDeadline), {
       sectionId,
       title: section.title,

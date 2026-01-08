@@ -8,7 +8,6 @@
  * @module
  */
 
-import type * as cron from "../cron.js";
 import type * as examples_studentMutations from "../examples/studentMutations.js";
 import type * as functions_academicSessions from "../functions/academicSessions.js";
 import type * as functions_alumni from "../functions/alumni.js";
@@ -66,7 +65,6 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  cron: typeof cron;
   "examples/studentMutations": typeof examples_studentMutations;
   "functions/academicSessions": typeof functions_academicSessions;
   "functions/alumni": typeof functions_alumni;
