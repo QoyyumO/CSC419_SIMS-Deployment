@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/lib/convex";
 import { ChangePasswordForm } from "./_components/ChangePasswordForm";
+import { NotificationSettingsForm } from "./_components/NotificationSettingsForm";
 import Alert from "@/components/ui/alert/Alert";
 import Tabs from "@/components/ui/tabs/Tabs";
 import TabPane from "@/components/ui/tabs/TabPane";
@@ -102,6 +103,10 @@ export default function ProfilePage() {
             <div>
               <ChangePasswordForm onSuccess={handleSuccess} />
             </div>
+          </TabPane>
+
+          <TabPane tab="Notification Settings">
+            <NotificationSettingsForm onSuccess={handleSuccess} />
           </TabPane>
         </Tabs>
       </div>
