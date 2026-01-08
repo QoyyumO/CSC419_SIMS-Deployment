@@ -155,3 +155,60 @@ export const markMultipleAsRead = mutation({
   },
 });
 
+/**
+ * Get notification preferences for the current user
+ * Returns the user's notification settings (email, frequency, etc.)
+ */
+export const getNotificationPreferences = query({
+  args: {
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Validate session token and get user
+    if (!args.token) {
+      return { email: true, frequency: "immediate" };
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      return { email: true, frequency: "immediate" };
+    }
+
+    // Get user's notification preferences
+    const user = await ctx.db.get(userId);
+    return user?.notificationPreferences || { email: true, frequency: "immediate" };
+  },
+});
+
+/**
+ * Save notification preferences for the current user
+ * Updates the user's notification settings
+ */
+export const saveNotificationPreferences = mutation({
+  args: {
+    preferences: v.object({
+      email: v.optional(v.boolean()),
+      frequency: v.optional(v.string()),
+    }),
+    token: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Validate session token and get user
+    if (!args.token) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new Error("Invalid session token");
+    }
+
+    // Update user's notification preferences
+    await ctx.db.patch(userId, {
+      notificationPreferences: args.preferences,
+    });
+
+    return { success: true };
+  },
+});
+

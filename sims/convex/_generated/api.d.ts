@@ -45,6 +45,7 @@ import type * as lib_services_enrollmentService from "../lib/services/enrollment
 import type * as lib_services_gradingService from "../lib/services/gradingService.js";
 import type * as lib_services_graduationService from "../lib/services/graduationService.js";
 import type * as lib_services_index from "../lib/services/index.js";
+import type * as lib_services_notificationService from "../lib/services/notificationService.js";
 import type * as lib_services_schedulingService from "../lib/services/schedulingService.js";
 import type * as lib_services_sectionService from "../lib/services/sectionService.js";
 import type * as lib_services_transcriptService from "../lib/services/transcriptService.js";
@@ -102,6 +103,7 @@ declare const fullApi: ApiFromModules<{
   "lib/services/gradingService": typeof lib_services_gradingService;
   "lib/services/graduationService": typeof lib_services_graduationService;
   "lib/services/index": typeof lib_services_index;
+  "lib/services/notificationService": typeof lib_services_notificationService;
   "lib/services/schedulingService": typeof lib_services_schedulingService;
   "lib/services/sectionService": typeof lib_services_sectionService;
   "lib/services/transcriptService": typeof lib_services_transcriptService;

@@ -108,6 +108,7 @@ export default function NotificationDropdown() {
       router.push('/grades');
     }
   };
+
   return (
     <div className="relative">
       <button

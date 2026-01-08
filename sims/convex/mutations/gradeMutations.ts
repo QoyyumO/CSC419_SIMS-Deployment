@@ -11,6 +11,7 @@ import { InvariantViolationError, NotFoundError } from "../lib/errors";
 import { createAuditLog, logCourseGradePosted, logGradeEdited } from "../lib/services/auditLogService";
 import { GradeValue } from "../lib/aggregates/types";
 import { validateSessionToken } from "../lib/session";
+import { sendGradeNotification } from "../lib/services/notificationService";
 
 /**
  * Converts percentage to GradeValue for audit log purposes only
@@ -203,6 +204,13 @@ export const recordGrade = mutation({
           sectionId: section._id,
         }
       );
+    }
+
+    // Send grade notification
+    try {
+      sendGradeNotification(ctx.db, args.enrollmentId, args.assessmentId);
+    } catch (e) {
+      console.error("Failed to send grade notification", e);
     }
 
     return {
