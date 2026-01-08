@@ -71,9 +71,19 @@ export default function Tabs({
   const [activeStep, setActiveStep] = useState(0);
   const [showTabs, setShowTabs] = useState(showTabsProp);
 
+  // Convert children to array and filter out invalid elements
+  const validChildren = React.Children.toArray(children).filter(
+    (child): child is React.ReactElement<TabPaneProps> =>
+      React.isValidElement(child)
+  );
+
+  // Ensure activeStep is within bounds
+  const safeActiveStep = Math.max(0, Math.min(activeStep, validChildren.length - 1));
+  const activeChild = validChildren[safeActiveStep];
+
   return (
     <TabsContext.Provider
-      value={{ activeStep, setActiveStep, showTabs, setShowTabs }}
+      value={{ activeStep: safeActiveStep, setActiveStep, showTabs, setShowTabs }}
     >
       <div className="w-full">
         {/* Tabs Row */}
@@ -87,8 +97,7 @@ export default function Tabs({
                   : 'justify-center'
             }`}
           >
-            {React.Children.map(children, (child, idx) => {
-              if (!React.isValidElement(child)) return null;
+            {validChildren.map((child, idx) => {
               const tabTitle = child.props.tab || `step ${idx + 1}`;
               return (
                 <React.Fragment key={`step-${idx}`}>
@@ -100,7 +109,7 @@ export default function Tabs({
                       onChange?.(idx);
                     }}
                   >
-                    {activeStep === idx ? (
+                    {safeActiveStep === idx ? (
                       <span className="border-brand-500 border-b-2 px-2.5 py-2">
                         <span className="text-brand-500 dark:text-brand-400 mr-1 text-sm font-semibold capitalize">
                           {tabTitle}
@@ -113,7 +122,7 @@ export default function Tabs({
                     )}
                   </button>
                   {tabStyle === 'progression' &&
-                    idx < React.Children.count(children) - 1 && (
+                    idx < validChildren.length - 1 && (
                       <ChevronRight />
                     )}
                 </React.Fragment>
@@ -122,7 +131,7 @@ export default function Tabs({
           </div>
         )}
         {/* Step Content */}
-        <div className="">{children[activeStep]}</div>
+        <div className="">{activeChild || null}</div>
       </div>
     </TabsContext.Provider>
   );
