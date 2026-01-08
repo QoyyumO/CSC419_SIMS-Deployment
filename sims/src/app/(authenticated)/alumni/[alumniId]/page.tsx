@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useParams } from 'next/navigation';
 import { useQuery } from 'convex/react';
 import { api } from '@/lib/convex';
 import PageBreadCrumb from '@/components/common/PageBreadCrumb';
@@ -8,12 +9,23 @@ import ComponentCard from '@/components/common/ComponentCard';
 import AlumniProfileForm from '../_components/AlumniProfileForm';
 import { RoleGuard } from '@/components/auth/RoleGuard';
 
-export default function AlumniDetailPage({ params }: { params: { alumniId: string } }) {
+export default function AlumniDetailPage() {
+  const params = useParams();
+  const alumniId = Array.isArray(params.alumniId) ? params.alumniId[0] : params.alumniId;
+
+  if (!alumniId) {
+    return (
+      <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+        <p className="text-lg font-medium mb-2">Invalid alumni ID</p>
+      </div>
+    );
+  }
+
   return (
     <RoleGuard roles={["admin", "registrar"]} unauthorizedMessage="You must be an administrator or registrar to access this page.">
       <div>
         <PageBreadCrumb pageTitle="Alumni Profile" />
-        <AlumniDetailClient alumniId={params.alumniId} />
+        <AlumniDetailClient alumniId={alumniId} />
       </div>
     </RoleGuard>
   );

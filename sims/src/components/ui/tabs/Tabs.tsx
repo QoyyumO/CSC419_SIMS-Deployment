@@ -1,6 +1,7 @@
 'use client';
 import React, {
   useState,
+  useMemo,
   createContext,
   useContext,
   Dispatch,
@@ -52,7 +53,7 @@ type TabPaneProps = {
 };
 
 type TabsProps = {
-  children: (React.ReactElement<TabPaneProps> | boolean)[];
+  children: React.ReactNode;
   showTabs?: boolean;
   justifyTabs?: 'center' | 'left' | 'right';
   tabStyle?: 'progression' | 'independent';
@@ -72,14 +73,33 @@ export default function Tabs({
   const [showTabs, setShowTabs] = useState(showTabsProp);
 
   // Convert children to array and filter out invalid elements
-  const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement<TabPaneProps> =>
-      React.isValidElement(child)
-  );
+  // Use useMemo to prevent unnecessary recalculations
+  const validChildren = useMemo(() => {
+    return React.Children.toArray(children).filter(
+      (child): child is React.ReactElement<TabPaneProps> => {
+        // Double-check that it's a valid React element
+        if (!React.isValidElement(child)) return false;
+        // Ensure it has the expected structure
+        if (typeof child.type === 'string' || typeof child.type === 'function') {
+          return true;
+        }
+        return false;
+      }
+    );
+  }, [children]);
 
   // Ensure activeStep is within bounds
-  const safeActiveStep = Math.max(0, Math.min(activeStep, validChildren.length - 1));
-  const activeChild = validChildren[safeActiveStep];
+  const safeActiveStep = useMemo(() => {
+    if (validChildren.length === 0) return 0;
+    return Math.max(0, Math.min(activeStep, validChildren.length - 1));
+  }, [activeStep, validChildren.length]);
+
+  const activeChild = useMemo(() => {
+    if (validChildren.length === 0) return null;
+    const child = validChildren[safeActiveStep];
+    // Final validation before returning
+    return React.isValidElement(child) ? child : null;
+  }, [validChildren, safeActiveStep]);
 
   return (
     <TabsContext.Provider
@@ -98,7 +118,8 @@ export default function Tabs({
             }`}
           >
             {validChildren.map((child, idx) => {
-              const tabTitle = child.props.tab || `step ${idx + 1}`;
+              if (!React.isValidElement(child)) return null;
+              const tabTitle = (child.props as TabPaneProps).tab || `step ${idx + 1}`;
               return (
                 <React.Fragment key={`step-${idx}`}>
                   <button
@@ -131,7 +152,9 @@ export default function Tabs({
           </div>
         )}
         {/* Step Content */}
-        <div className="">{activeChild || null}</div>
+        <div className="">
+          {activeChild && React.isValidElement(activeChild) ? activeChild : null}
+        </div>
       </div>
     </TabsContext.Provider>
   );
