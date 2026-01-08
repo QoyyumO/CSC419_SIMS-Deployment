@@ -41,6 +41,10 @@ export default function NotificationsPage() {
   // Mutations
   const markAsRead = useMutation(api.functions.notifications.markAsRead);
   const markMultipleAsRead = useMutation(api.functions.notifications.markMultipleAsRead);
+  // Convex queries (useQuery) are live and re-run when the underlying data changes.
+  // If you need toast notifications on new items, create a small query that
+  // returns the latest notification timestamp and watch it with useQuery, then
+  // show a toast when it changes.
 
   // Filter notifications
   const filteredNotifications = useMemo(() => {
@@ -157,6 +161,9 @@ export default function NotificationsPage() {
       </div>
     );
   }
+
+  const types = Array.from(new Set(notifications.map((n: any) => n.type)));
+  const filtered = filter ? notifications.filter((n: any) => n.type === filter) : notifications;
 
   return (
     <div>

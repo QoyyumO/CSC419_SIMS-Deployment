@@ -19,6 +19,7 @@ import {
 } from "../lib/services/enrollmentService";
 import { logStudentEnrolled, logStudentDropped } from "../lib/services/auditLogService";
 import { validateSessionToken } from "../lib/session";
+import { sendEnrollmentConfirmation } from "../lib/services/notificationService";
 
 /**
  * Operation: Enroll Student in a Section
@@ -69,6 +70,13 @@ export const enrollStudentInSection = mutation({
       status: "enrolled",
       enrolledAt: Date.now(),
     });
+
+    // send confirmation notification (fire-and-forget)
+    try {
+      sendEnrollmentConfirmation(ctx.db, enrollmentId);
+    } catch (e) {
+      console.error("Failed to send enrollment confirmation notification", e);
+    }
 
     // Step 5: Increment section enrollment count
     await ctx.db.patch(args.sectionId, {
