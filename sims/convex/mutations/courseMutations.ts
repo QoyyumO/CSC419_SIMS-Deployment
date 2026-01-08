@@ -9,6 +9,9 @@ import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { validateCreateCourse, validateUpdateCourse, NotFoundError, validateCourseStatus, isRequiredCourse } from "../lib/aggregates";
 import { logCourseCreated, logCourseUpdated } from "../lib/services/auditLogService";
+import { courseCatalogService } from "../lib/services";
+import { validateSessionToken } from "../lib/session";
+import { ValidationError } from "../lib/errors";
 
 /**
  * Create a new course
@@ -63,6 +66,17 @@ export const createCourse = mutation({
       status: courseStatus,
       level: args.level,
     });
+
+    // Validate prerequisite chains for the newly created course
+    const createValidation = await courseCatalogService.validatePrerequisiteChain(ctx.db, courseId);
+    if (!createValidation.valid) {
+      // Roll back the created course if validation fails
+      await ctx.db.delete(courseId);
+      if (createValidation.cycle) {
+        throw new Error(`Circular prerequisite detected: ${createValidation.cycle.join(" -> ")}`);
+      }
+      throw new Error(createValidation.reason || "Invalid prerequisite chain");
+    }
 
     // If course has status 'C' or 'R' and is associated with programs, add it to their requiredCourses
     if (isRequiredCourse(courseStatus) && args.programIds && args.programIds.length > 0) {
@@ -172,6 +186,19 @@ export const updateCourse = mutation({
     // Update the course
     await ctx.db.patch(args.courseId, updates);
 
+    // If prerequisites were updated, validate the new chain and revert if invalid
+    if (args.prerequisites !== undefined) {
+      const validation = await courseCatalogService.validatePrerequisiteChain(ctx.db, args.courseId);
+      if (!validation.valid) {
+        // Revert prerequisites to previous value
+        await ctx.db.patch(args.courseId, { prerequisites: course.prerequisites });
+        if (validation.cycle) {
+          throw new Error(`Circular prerequisite detected: ${validation.cycle.join(" -> ")}`);
+        }
+        throw new Error(validation.reason || "Invalid prerequisite chain");
+      }
+    }
+
     // Sync course with program requiredCourses based on status
     // If status is 'C' or 'R', add to requiredCourses; if 'E', remove from requiredCourses
     const isRequired = isRequiredCourse(finalStatus);
@@ -239,3 +266,96 @@ export const updateCourse = mutation({
   },
 });
 
+/**
+ * Create a new course version
+ * Restricted to department heads for courses in their department
+ */
+export const createCourseVersion = mutation({
+  args: {
+    token: v.optional(v.string()),
+    courseId: v.id("courses"),
+    title: v.string(),
+    description: v.string(),
+    credits: v.number(),
+    prerequisites: v.array(v.string()), // Course codes instead of IDs
+  },
+  handler: async (ctx, args) => {
+    // Validate session token and get user
+    if (!args.token) {
+      throw new ValidationError("token", "Authentication required");
+    }
+
+    const userId = await validateSessionToken(ctx.db, args.token);
+    if (!userId) {
+      throw new ValidationError("token", "Invalid session token");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new NotFoundError("User", userId);
+    }
+
+    // Verify role is department_head
+    if (!user.roles.includes("department_head")) {
+      throw new Error("Access denied: Department head role required");
+    }
+
+    // Find department where this user is the head
+    const department = await ctx.db
+      .query("departments")
+      .withIndex("by_headId", (q) => q.eq("headId", userId))
+      .first();
+
+    if (!department) {
+      throw new Error("Department not found for this user");
+    }
+
+    // Validate that courseId belongs to this department
+    const course = await ctx.db.get(args.courseId);
+    if (!course) {
+      throw new NotFoundError("Course", args.courseId);
+    }
+
+    if (course.departmentId !== department._id) {
+      throw new ValidationError(
+        "courseId",
+        "Course does not belong to your department"
+      );
+    }
+
+    // Validate prerequisites don't create circular dependencies
+    // First, create a temporary course version payload to validate
+    const tempPayload = {
+      version: 0, // Will be set by service
+      title: args.title,
+      description: args.description,
+      credits: args.credits,
+      prerequisites: args.prerequisites,
+      isActive: true,
+    };
+
+    // Create the course version using the service
+    const versionId = await courseCatalogService.createCourseVersion(
+      ctx.db,
+      args.courseId,
+      tempPayload
+    );
+
+    // Validate prerequisite chain for the new version
+    const validation = await courseCatalogService.validatePrerequisiteChain(
+      ctx.db,
+      args.courseId
+    );
+    
+    if (!validation.valid) {
+      // Roll back the created version if validation fails
+      await ctx.db.delete(versionId);
+      if (validation.cycle) {
+        throw new Error(`Circular prerequisite detected: ${validation.cycle.join(" -> ")}`);
+      }
+      throw new Error(validation.reason || "Invalid prerequisite chain");
+    }
+
+    return { success: true, versionId };
+  },
+});

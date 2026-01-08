@@ -104,9 +104,14 @@ const AppSidebar: React.FC = () => {
           },
         ]
       : []),
-    // Only show sections link for department heads
+    // Only show courses and sections links for department heads
     ...(userIsDepartmentHead
       ? [
+          {
+            icon: <BoxIcon />,
+            name: 'Courses',
+            path: '/courses',
+          },
           {
             icon: <FileIcon />,
             name: 'Sections',

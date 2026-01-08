@@ -12,5 +12,6 @@ export * from "./graduationService";
 export * from "./gradingService";
 export * from "./schedulingService";
 export * from "./transcriptService";
+export * from "./courseCatalogService";
 export * from "./auditLogService";
 

@@ -548,12 +548,37 @@ export const getDepartmentCourses = query({
       .withIndex("by_departmentId", (q) => q.eq("departmentId", department._id))
       .collect();
 
-    return courses.map((course) => ({
-      _id: course._id,
-      code: course.code,
-      title: course.title,
-      credits: course.credits,
-    }));
+    // Enrich courses with department and program information
+    const enrichedCourses = await Promise.all(
+      courses.map(async (course) => {
+        // Get department
+        const courseDepartment = await ctx.db.get(course.departmentId);
+        
+        // Get programs
+        const coursePrograms = await Promise.all(
+          (course.programIds || []).map(async (programId) => {
+            const program = await ctx.db.get(programId);
+            return program ? { _id: program._id, name: program.name } : null;
+          })
+        );
+
+        return {
+          _id: course._id,
+          code: course.code,
+          title: course.title,
+          credits: course.credits,
+          department: courseDepartment ? {
+            _id: courseDepartment._id,
+            name: courseDepartment.name,
+          } : null,
+          programs: coursePrograms.filter((p): p is { _id: Id<"programs">; name: string } => p !== null),
+          status: course.status,
+          level: course.level,
+        };
+      })
+    );
+
+    return enrichedCourses;
   },
 });
 

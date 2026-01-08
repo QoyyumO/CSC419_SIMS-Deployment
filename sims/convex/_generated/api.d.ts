@@ -40,6 +40,7 @@ import type * as lib_aggregates_types from "../lib/aggregates/types.js";
 import type * as lib_aggregates_userAggregate from "../lib/aggregates/userAggregate.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_services_auditLogService from "../lib/services/auditLogService.js";
+import type * as lib_services_courseCatalogService from "../lib/services/courseCatalogService.js";
 import type * as lib_services_enrollmentService from "../lib/services/enrollmentService.js";
 import type * as lib_services_gradingService from "../lib/services/gradingService.js";
 import type * as lib_services_graduationService from "../lib/services/graduationService.js";
@@ -96,6 +97,7 @@ declare const fullApi: ApiFromModules<{
   "lib/aggregates/userAggregate": typeof lib_aggregates_userAggregate;
   "lib/errors": typeof lib_errors;
   "lib/services/auditLogService": typeof lib_services_auditLogService;
+  "lib/services/courseCatalogService": typeof lib_services_courseCatalogService;
   "lib/services/enrollmentService": typeof lib_services_enrollmentService;
   "lib/services/gradingService": typeof lib_services_gradingService;
   "lib/services/graduationService": typeof lib_services_graduationService;

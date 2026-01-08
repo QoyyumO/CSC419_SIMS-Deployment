@@ -12,16 +12,16 @@ type Course = {
   code: string;
   title: string;
   credits: number;
-  department: {
+  department?: {
     _id: Id<'departments'>;
     name: string;
   } | null;
-  programs: Array<{
+  programs?: Array<{
     _id: Id<'programs'>;
     name: string;
   }>;
-  status: string;
-  level: string;
+  status?: string;
+  level?: string;
 };
 
 interface CoursesTableProps {

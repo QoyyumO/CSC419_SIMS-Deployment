@@ -105,6 +105,25 @@ export default defineSchema({
     .index("by_departmentId_level", ["departmentId", "level"]),
 
   /**
+   * Course Versions Collection
+   * Represents versioned definitions of a course (e.g., curriculum changes)
+   * Foreign Keys: courseId → courses._id
+   */
+  courseVersions: defineTable({
+    courseId: v.id("courses"),
+    version: v.number(),
+    title: v.string(),
+    description: v.string(),
+    credits: v.number(),
+    prerequisites: v.array(v.string()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_courseId", ["courseId"])
+    .index("by_courseId_isActive", ["courseId", "isActive"])
+    .index("by_courseId_version", ["courseId", "version"]),
+
+  /**
    * Sections Collection (AGGREGATE ROOT: SectionAggregate)
    * Represents specific course offerings in a term
    * Uses AcademicPeriod value object to contextualize the section

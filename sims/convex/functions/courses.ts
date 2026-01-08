@@ -8,6 +8,7 @@ import { query } from "../_generated/server";
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { validateSessionToken } from "../lib/session";
+import { courseCatalogService } from "../lib/services";
 
 /**
  * List public courses with filtering and search
@@ -291,6 +292,70 @@ export const getDetails = query({
       prerequisites: prerequisiteNames,
       activeSections: activeSections,
     };
+  },
+});
+
+export const getVersions = query({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    const versions = await ctx.db
+      .query("courseVersions")
+      .withIndex("by_courseId", (q) => q.eq("courseId", args.courseId))
+      .collect();
+
+    const mapped = versions.map((v) => ({
+      _id: v._id,
+      version: v.version,
+      title: v.title,
+      description: v.description,
+      credits: v.credits,
+      prerequisites: v.prerequisites || [],
+      isActive: v.isActive,
+      createdAt: v.createdAt,
+    }));
+
+    // Sort by version descending (latest first)
+    return mapped.sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
+  },
+});
+
+export const getPrerequisitesGraph = query({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    // Use the CourseCatalogService to build the graph and validate chains
+    const graph = await courseCatalogService.getPrerequisitesGraph(ctx.db, args.courseId);
+    const validation = await courseCatalogService.validatePrerequisiteChain(ctx.db, args.courseId);
+
+    // Also include the root course code for client use
+    const course = await ctx.db.get(args.courseId);
+    const root = course ? course.code : null;
+
+    return {
+      graph,
+      validation,
+      root,
+    };
+  },
+});
+
+export const getDependentCourses = query({
+  args: {
+    courseId: v.id("courses"),
+    candidateCode: v.optional(v.string()),
+    candidatePrerequisites: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const course = await ctx.db.get(args.courseId);
+    if (!course) {
+      throw new Error("Course not found");
+    }
+
+    // If candidatePrerequisites provided, we should also consider their effect on other courses
+    // For now, dependent courses are those whose prerequisites include the candidateCode or course.code
+
+    // Delegate to service to reuse logic
+    const dependents = await courseCatalogService.getDependentCourses(ctx.db, args.courseId, args.candidateCode);
+    return dependents;
   },
 });
 

@@ -1,12 +1,15 @@
 'use client';
 
 import React from 'react';
+import { useParams } from 'next/navigation';
+import { Id } from '@/lib/convex';
 import { useAuth } from '@/hooks/useAuth';
 import { isStudent, isDepartmentHead } from '@/services/permissions.service';
-import StudentCoursesPage from './_components/StudentCoursesPage';
-import DepartmentHeadCoursesPage from './_components/DepartmentHeadCoursesPage';
+import CourseVersionsPage from '../../_components/CourseVersionsPage';
 
-export default function CoursesPage() {
+export default function CourseVersionsPageRoute() {
+  const params = useParams();
+  const courseId = (Array.isArray(params.courseId) ? params.courseId[0] : params.courseId) as Id<'courses'> | undefined;
   const { user } = useAuth();
   const roles = user?.roles || [];
   const userIsStudent = isStudent(roles);
@@ -21,21 +24,20 @@ export default function CoursesPage() {
             Access Denied
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Only students and department heads can access courses.
+            Only students and department heads can access course versions.
           </p>
         </div>
       </div>
     );
   }
 
-  if (userIsStudent) {
-    return <StudentCoursesPage />;
+  if (!courseId) {
+    return (
+      <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+        <p className="text-lg font-medium mb-2">Invalid course ID</p>
+      </div>
+    );
   }
 
-  if (userIsDepartmentHead) {
-    return <DepartmentHeadCoursesPage />;
-  }
-
-  return null;
+  return <CourseVersionsPage courseId={courseId} />;
 }
-
