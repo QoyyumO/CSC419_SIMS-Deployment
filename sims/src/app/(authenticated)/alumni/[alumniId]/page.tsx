@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/lib/convex';
