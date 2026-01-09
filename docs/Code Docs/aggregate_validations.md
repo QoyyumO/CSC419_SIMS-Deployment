@@ -116,47 +116,48 @@ export const createStudent = mutation({
 - `validateProgramCoursePrerequisites(db, requirements)`
 
 ### Course Aggregate
-- `validateCreateCourse(db, code, credits, prerequisites)`
-- `validateUpdateCourse(db, courseId, code?, credits?, prerequisites?)`
-- `validateCourseCodeUniqueness(db, code, excludeId?)`
-- `validateCoursePrerequisites(db, prerequisites)`
-- `validateNoCircularPrerequisites(courseId, prerequisites)`
-- `validateCreditValue(credits)`
+- `validateCreateCourse(db, code, credits, prerequisites)` - Validates all invariants for creating a course
+- `validateUpdateCourse(db, courseId, code?, credits?, prerequisites?)` - Validates all invariants for updating a course
+- `validateCourseCodeUniqueness(db, code, excludeId?)` - Validates course code uniqueness
+- `validateCoursePrerequisites(db, prerequisites)` - Validates all prerequisites point to valid courses (by code)
+- `validateNoCircularPrerequisites(courseCode, prerequisites)` - Validates course is not a prerequisite of itself
+- `validateCreditValue(credits)` - Validates credit value is positive and ≤ 6
 - `validateCourseStatus(status)` - Validates course status is "C", "R", or "E"
 - `isRequiredCourse(status)` - Checks if course status is required (C or R)
-- `getCoursesUsingAsPrerequisite(db, courseId)`
+- `getCoursesUsingAsPrerequisite(db, courseCode)` - Returns list of courses that use this course as a prerequisite
 
 ### Section Aggregate
-- `validateCreateSection(db, courseId, termId, instructorId, capacity, scheduleSlots)`
-- `validateUpdateSection(db, sectionId, capacity?, scheduleSlots?, instructorId?)`
-- `validateSectionCanEnroll(db, sectionId)`
-- `validateEnrollmentCapacity(enrollmentCount, capacity)`
-- `validateCapacityUpdate(currentEnrollmentCount, newCapacity)`
-- `validateAssessmentWeights(db, sectionId, excludeAssessmentId?)`
-- `validateAssessmentWeight(db, sectionId, newWeight, excludeAssessmentId?)`
-- `validateScheduleSlot(slot)` - Validates a single schedule slot
-- `validateNoOverlappingSlots(slots)` - Validates no overlapping schedule slots
-- `validateInstructorRole(db, instructorId)`
+- `validateCreateSection(db, courseId, termId, instructorId, capacity, scheduleSlots)` - Validates all invariants for creating a section
+- `validateUpdateSection(db, sectionId, capacity?, scheduleSlots?, instructorId?)` - Validates all invariants for updating a section
+- `validateSectionCanEnroll(db, sectionId)` - Validates section has available capacity for enrollment
+- `validateEnrollmentCapacity(enrollmentCount, capacity)` - Validates enrollment count doesn't exceed capacity
+- `validateCapacityUpdate(currentEnrollmentCount, newCapacity)` - Validates capacity update doesn't violate enrollment count
+- `validateAssessmentWeights(db, sectionId, excludeAssessmentId?)` - Validates all assessment weights sum to 100%
+- `validateAssessmentWeight(db, sectionId, newWeight, excludeAssessmentId?)` - Validates new assessment weight won't exceed 100% total
+- `validateScheduleSlot(slot)` - Validates a single schedule slot (startTime < endTime)
+- `validateNoOverlappingSlots(slots)` - Validates no overlapping schedule slots within the same section
+- `validateInstructorRole(db, instructorId)` - Validates instructor has appropriate role (instructor, admin, or department_head)
 
 ### Student Aggregate
-- `validateCreateStudent(db, userId, studentNumber, programId, status)`
-- `validateUpdateStudent(db, studentId, status?, programId?)`
-- `validateStudentCanEnroll(db, studentId)`
-- `validateStudentNumberUniqueness(db, studentNumber, excludeId?)`
-- `validateUserAssociation(db, userId)`
-- `validateProgramAssociation(db, programId)`
-- `validateStatusTransition(currentStatus, newStatus)`
-- `validateCanEnroll(student)`
+- `validateCreateStudent(db, userId, studentNumber, departmentId, status)` - Validates all invariants for creating a student
+- `validateUpdateStudent(db, studentId, status?, departmentId?)` - Validates all invariants for updating a student
+- `validateStudentCanEnroll(db, studentId)` - Validates student can enroll (status must be "active")
+- `validateStudentNumberUniqueness(db, studentNumber, excludeId?)` - Validates student number uniqueness
+- `validateUserAssociation(db, userId)` - Validates user exists
+- `validateDepartmentAssociation(db, departmentId)` - Validates department exists
+- `validateStatusTransition(currentStatus, newStatus)` - Validates status transition is allowed
+- `validateCanEnroll(student)` - Validates student status allows enrollment operations
+- `validateStudentStatus(status)` - Validates status is from allowed set: "active", "suspended", "graduated", "inactive"
 
 ### Enrollment Aggregate
-- `validateCreateEnrollment(db, studentId, sectionId, termId, status)`
-- `validateUpdateEnrollment(db, enrollmentId, newStatus?, requireAppeal?)`
-- `validateUniqueEnrollment(db, studentId, sectionId, excludeId?)`
-- `validateEnrollmentReferences(db, studentId, sectionId)`
-- `validateTermConsistency(db, sectionId, termId)`
-- `validateEnrollmentStatus(status)` - Validates enrollment status is valid
-- `validateStatusChange(db, enrollment, newStatus, requireAppeal?)`
-- `hasFinalGrade(db, enrollmentId)` - Checks if enrollment has a final grade
+- `validateCreateEnrollment(db, studentId, sectionId, termId, status)` - Validates all invariants for creating an enrollment
+- `validateUpdateEnrollment(db, enrollmentId, newStatus?, requireAppeal?)` - Validates all invariants for updating an enrollment
+- `validateUniqueEnrollment(db, studentId, sectionId, excludeId?)` - Validates student is not already enrolled in the same section
+- `validateEnrollmentReferences(db, studentId, sectionId)` - Validates student and section references exist
+- `validateTermConsistency(db, sectionId, termId)` - Validates enrollment term matches section term
+- `validateEnrollmentStatus(status)` - Validates enrollment status is from allowed set: "enrolled", "active", "waitlisted", "dropped", "completed", "failed", "withdrawn", "pending"
+- `validateStatusChange(db, enrollment, newStatus, requireAppeal?)` - Validates enrollment status can be changed (checks for final grade)
+- `hasFinalGrade(db, enrollmentId)` - Checks if enrollment has any grades recorded
 
 ### User Aggregate
 - `validateCreateUser(db, username, hashedPassword, roles, profile)`
@@ -169,32 +170,32 @@ export const createStudent = mutation({
 - `validateRoleConsistency(db, userId, roles)` - Validates role consistency with user's other records
 
 ### Transcript Aggregate
-- `validateCreateTranscript(db, studentId, entries, gpa, metadata?)`
-- `validateAddTranscriptEntry(db, transcriptId, newEntry)`
-- `recalculateAndValidateGPA(db, transcriptId)` - Recalculates and validates GPA matches entries
-- `calculateGPA(entries)` - Calculates GPA from transcript entries
-- `validateGPA(transcript)` - Validates GPA matches calculated value from entries
-- `validateTranscriptEntry(entry)` - Validates transcript entry structure
+- `validateCreateTranscript(db, studentId, entries, gpa, metadata?)` - Validates all invariants for creating a transcript
+- `validateAddTranscriptEntry(db, transcriptId, newEntry)` - Validates all invariants for adding an entry to a transcript
+- `recalculateAndValidateGPA(db, transcriptId)` - Recalculates and validates GPA matches entries, returns calculated GPA
+- `calculateGPA(entries)` - Calculates GPA from transcript entries using formula: Σ(grade.points × credits) / Σ(credits)
+- `validateGPA(transcript)` - Validates stored GPA matches calculated value from entries (0.01 tolerance)
+- `validateTranscriptEntry(entry)` - Validates transcript entry structure (courseCode, credits > 0, grade.points 0-4)
 - `validateTranscriptStudent(db, studentId)` - Validates student exists
-- `validateMetadata(db, metadata?)` - Validates transcript metadata
+- `validateMetadata(db, metadata?)` - Validates transcript metadata (generatedBy user exists, generatedAt is valid)
 
 ### Academic Calendar Aggregate
-- `validateCreateAcademicSession(db, label)`
-- `validateUpdateAcademicSession(db, sessionId, label?)`
-- `validateCreateTerm(db, sessionId, name, startDate, endDate)`
-- `validateUpdateTerm(db, termId, startDate?, endDate?)`
-- `validateSessionYearLabelUniqueness(db, label, excludeId?)` - Validates session year label uniqueness
+- `validateCreateAcademicSession(db, yearLabel, startDate, endDate)` - Validates all invariants for creating an academic session
+- `validateUpdateAcademicSession(db, sessionId, yearLabel?, startDate?, endDate?)` - Validates all invariants for updating an academic session
+- `validateCreateTerm(db, sessionId, name, startDate, endDate)` - Validates all invariants for creating a term
+- `validateUpdateTerm(db, termId, startDate?, endDate?)` - Validates all invariants for updating a term
+- `validateSessionYearLabelUniqueness(db, yearLabel, excludeId?)` - Validates session year label uniqueness
 - `validateTermSession(db, sessionId)` - Validates term belongs to session
 - `validateTermDates(startDate, endDate)` - Validates term dates (startDate < endDate)
 - `validateNoOverlappingTerms(db, sessionId, termStartDate, termEndDate, excludeTermId?)` - Validates no overlapping terms in same session
 
 ### Graduation Aggregate
-- `validateCreateGraduation(db, studentId, approvedBy, date, checkRequirements?)`
-- `validateUpdateGraduation(db, graduationId, approvedBy?, date?)`
-- `validateApproverAuthority(db, approverId)` - Validates approver has required role (registrar, admin, or department_head)
-- `validateGraduationStudent(db, studentId)` - Validates student exists and can graduate
-- `validateGraduationDate(date)` - Validates graduation date is valid
-- `validateGraduationRequirements(db, studentId)` - Validates all graduation requirements are met
+- `validateCreateGraduation(db, studentId, approvedBy, date, checkRequirements?)` - Validates all invariants for creating a graduation record
+- `validateUpdateGraduation(db, graduationId, approvedBy?, date?)` - Validates all invariants for updating a graduation record
+- `validateApproverAuthority(db, approverId)` - Validates approver has required role (only "registrar")
+- `validateGraduationStudent(db, studentId)` - Validates student exists and returns student record
+- `validateGraduationDate(date)` - Validates graduation date is valid timestamp
+- `validateGraduationRequirements(db, studentId)` - Validates all graduation requirements are met (GPA ≥ 2.0, credits ≥ 120, no incomplete enrollments)
 - `validateNoDuplicateGraduation(db, studentId, excludeId?)` - Validates no duplicate graduation records
 
 ## Error Types

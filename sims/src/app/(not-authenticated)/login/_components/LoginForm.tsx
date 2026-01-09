@@ -34,9 +34,12 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
   const validate = (): boolean => {
     const errors: { email?: string; password?: string } = {};
 
+    // Comprehensive email regex pattern
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     if (!email.trim()) {
       errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!emailRegex.test(email.trim())) {
       errors.email = "Please enter a valid email address";
     }
 
@@ -74,7 +77,8 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
     }
 
     try {
-      const result = await login(email, password);
+      // Convert email to lowercase for case-insensitive login
+      const result = await login(email.toLowerCase().trim(), password);
 
       if (result.success) {
         let redirectPath = redirectTo;

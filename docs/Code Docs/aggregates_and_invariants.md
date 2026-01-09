@@ -262,55 +262,6 @@ The EnrollmentAggregate represents a student's enrollment in a course section. I
 
 ---
 
-## 6. EnrollmentAggregate
-
-**Root Entity:** `enrollments`
-
-**Aggregate Boundary:**
-- **Root:** `enrollments` (contains: studentId, sectionId, status, enrolledAt, sessionId, termId, grade, term)
-- **Referenced Entities:** `grades` (via foreign key references)
-
-**Description:**
-The EnrollmentAggregate represents a student's enrollment in a course section. It maintains the enrollment status and associated grades.
-
-### Invariants
-
-1. **Final Grade Immutability**
-   - Once a final grade is recorded, the enrollment status cannot be changed without an official appeal process
-   - **Enforcement:**
-     - Check if final grade exists before allowing status changes
-     - Require special permission/flag for status changes after final grade
-     - Log all status changes after final grade for audit purposes
-
-2. **Enrollment Status Validity**
-   - Status must be from a predefined set (e.g., "active", "enrolled", "dropped", "completed", "failed", "waitlisted")
-   - **Enforcement:** Validate status value against allowed set
-
-3. **Unique Enrollment**
-   - A student cannot be enrolled in the same section multiple times
-   - **Enforcement:** Check for existing enrollment before creating new one
-   - **Index:** `by_studentId_sectionId` composite index supports uniqueness checks
-
-4. **Student and Section Validity**
-   - Enrollment must reference valid student and section
-   - The `enrollments.studentId` must reference an existing `students._id`
-   - The `enrollments.sectionId` must reference an existing `sections._id`
-   - **Enforcement:** Validate both references exist before creating enrollment
-
-5. **Term Consistency**
-   - Enrollment term must match section term
-   - The `enrollments.termId` should match `sections.termId`
-   - The `enrollments.sessionId` should match `sections.sessionId`
-   - **Enforcement:** Validate term and session consistency when creating enrollment
-
-### Transaction Boundaries
-
-- Creating enrollment: Must validate student, section, and check for duplicates in the same transaction
-- Changing enrollment status: Must check for final grade and validate status transition in the same transaction
-- Recording final grade: Must update enrollment status appropriately in the same transaction
-
----
-
 ## 7. UserAggregate
 
 **Root Entity:** `users`
@@ -420,64 +371,7 @@ The TranscriptAggregate represents a student's academic transcript with computed
 
 ---
 
-## 9. TranscriptAggregate
-
-**Root Entity:** `transcripts`
-
-**Aggregate Boundary:**
-- **Root:** `transcripts` (contains: studentId, entries, gpa, metadata)
-- **Value Objects:** 
-  - Transcript entries (array of entry objects with GradeValue)
-  - `ReportMetadata` (optional, embedded in metadata)
-
-**Description:**
-The TranscriptAggregate represents a student's academic transcript with computed GPA and immutable course entries.
-
-### Invariants
-
-1. **GPA Calculation Accuracy**
-   - GPA must be computed correctly based on a fixed formula
-   - Formula: `GPA = Σ(grade.points × credits) / Σ(credits)` for all entries
-   - **Enforcement:**
-     - Recalculate GPA whenever entries are added or modified
-     - Validate calculated GPA matches stored GPA
-     - Use consistent rounding (typically 2 decimal places)
-
-2. **Entry Immutability**
-   - Entries are immutable once added
-   - **Enforcement:**
-     - Do not allow direct updates to existing entries
-     - To correct errors, add new entries with correction notes or use an audit trail
-     - Only allow additions, not modifications or deletions
-
-3. **Student Association**
-   - Transcript must belong to a valid student
-   - The `transcripts.studentId` must reference an existing `students._id`
-   - **Enforcement:** Validate student exists before creating/updating transcript
-
-4. **Entry Validity**
-   - All transcript entries must have valid course codes, credits, and grades
-   - Grade values must be within valid ranges
-   - **Enforcement:** Validate entry data before adding to transcript
-
-5. **One Transcript Per Student**
-   - A student should have one primary transcript (unless business rules allow multiple)
-   - **Enforcement:** Validate one-to-one relationship if required
-
-6. **Metadata Consistency**
-   - If metadata exists, `generatedBy` must reference a valid user
-   - `generatedAt` must be a valid timestamp
-   - **Enforcement:** Validate metadata fields when present
-
-### Transaction Boundaries
-
-- Adding transcript entry: Must recalculate GPA and validate entry in the same transaction
-- Creating transcript: Must validate student exists in the same transaction
-- Updating GPA: Must ensure it matches calculated value from entries in the same transaction
-
----
-
-## 10. GraduationAggregate
+## 9. GraduationAggregate
 
 **Root Entity:** `graduationRecords`
 
@@ -522,8 +416,46 @@ The GraduationAggregate represents the graduation approval workflow and degree c
 
 ### Transaction Boundaries
 
-- Creating graduation record: Must validate all requirements, check approver authority, and update student status in the same transaction
+- Creating graduation record: Must validate all requirements, check approver authority, update student status, and create alumni profile in the same transaction
 - Approving graduation: Must verify all prerequisites are met in the same transaction
+
+---
+
+## 10. AcademicCalendarAggregate
+
+**Root Entity:** `academicSessions`
+
+**Aggregate Boundary:**
+- **Root:** `academicSessions` (contains: yearLabel, startDate, endDate, terms)
+- **Referenced Entities:** `terms` (separate collection with sessionId reference)
+
+**Description:**
+The AcademicCalendarAggregate represents academic sessions and their terms, managing the academic calendar structure.
+
+### Invariants
+
+1. **Session Year Label Uniqueness**
+   - Session year labels must be unique (e.g., "2024/2025")
+   - **Enforcement:** Check for duplicate year labels before creation
+
+2. **Term Date Validity**
+   - Term start date must be before end date
+   - **Enforcement:** Validate date ranges when creating/updating terms
+
+3. **Non-Overlapping Terms**
+   - Terms within the same session must not overlap
+   - **Enforcement:** Check for date overlaps when creating/updating terms
+
+4. **Term Session Association**
+   - Terms must belong to a valid academic session
+   - The `terms.sessionId` must reference an existing `academicSessions._id`
+   - **Enforcement:** Validate session exists before creating/updating a term
+
+### Transaction Boundaries
+
+- Creating academic session: Must validate year label uniqueness and date validity in the same transaction
+- Creating term: Must validate session exists, date validity, and no overlaps in the same transaction
+- Updating term: Must validate date validity and no overlaps in the same transaction
 
 ---
 

@@ -109,14 +109,17 @@ export const login = mutation({
     password: v.string(),
   },
   handler: async (ctx, args) => {
+    // Convert email to lowercase for case-insensitive login
+    const emailLower = args.email.toLowerCase().trim();
+    
     // Find user by email
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
       .first();
 
     if (!user) {
-      throw new NotFoundError("User", args.email);
+      throw new NotFoundError("User", emailLower);
     }
 
     // Verify password
@@ -225,9 +228,12 @@ export const requestPasswordReset = mutation({
     username: v.string(), // Keep for backward compatibility, but it's actually email
   },
   handler: async (ctx, args) => {
+    // Convert email to lowercase for case-insensitive lookup
+    const emailLower = args.username.toLowerCase().trim();
+    
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.username))
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
       .first();
 
     // Do not leak existence
@@ -263,13 +269,16 @@ export const resetPassword = mutation({
       throw new ValidationError("resetToken", "Invalid or expired reset token");
     }
 
+    // Convert email to lowercase for case-insensitive lookup
+    const emailLower = args.username.toLowerCase().trim();
+
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.username))
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
       .first();
 
     if (!user) {
-      throw new NotFoundError("User", args.username);
+      throw new NotFoundError("User", emailLower);
     }
 
     const hashedPassword = await hashPassword(args.newPassword);

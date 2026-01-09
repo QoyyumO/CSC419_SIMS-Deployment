@@ -75,6 +75,33 @@ The schema is defined using Convex's schema definition system, which provides ty
 
 ---
 
+### Course Versions Collection
+
+**Purpose:** Represents versioned definitions of a course (e.g., curriculum changes).
+
+**Fields:**
+- `courseId` (Id<"courses">) - Foreign key to the course
+- `version` (number) - Version number
+- `title` (string) - Course title for this version
+- `description` (string) - Course description for this version
+- `credits` (number) - Credit hours for this version
+- `prerequisites` (array of string) - Array of course codes that are prerequisites
+- `isActive` (boolean) - Whether this version is currently active
+- `createdAt` (number) - Unix timestamp when version was created
+
+**Indexes:**
+- `by_courseId` - Index on `courseId` for querying versions by course
+- `by_courseId_isActive` - Composite index for querying active versions
+- `by_courseId_version` - Composite index for querying by course and version
+
+**Foreign Key Relationships:**
+- `courseId` → `courses._id`
+
+**Related Collections:**
+- References: `courses`
+
+---
+
 ### Courses Collection
 
 **Purpose:** Represents individual courses that can be offered.
@@ -165,6 +192,9 @@ The schema is defined using Convex's schema definition system, which provides ty
   - `middleName` (optional string) - Middle name (optional)
   - `lastName` (string) - Last name (required)
 - `active` (optional boolean) - Whether the user account is active
+- `notificationPreferences` (optional object) - Notification preferences
+  - `email` (optional boolean) - Email notification preference
+  - `frequency` (optional string) - Notification frequency: "immediate", "daily", "weekly"
 
 **Indexes:**
 - `by_email` - Index on `email` for unique lookups and authentication
@@ -294,7 +324,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 **Fields:**
 - `enrollmentId` (Id<"enrollments">) - Foreign key to the enrollment
 - `assessmentId` (Id<"assessments">) - Foreign key to the assessment
-- `grade` (number) - Numeric grade (percentage 0-100)
+- `grade` (number) - Numeric grade (percentage 0-100, rounded to 2 decimal places)
 - `recordedBy` (Id<"users">) - Foreign key to the user who recorded the grade
 
 **Indexes:**
@@ -308,7 +338,7 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `assessmentId` → `assessments._id`
 - `recordedBy` → `users._id`
 
-**Note:** The grades table stores only numeric percentage (0-100). Letter grade mapping happens in the transcript service when generating transcripts.
+**Note:** The grades table stores only numeric percentage (0-100). Letter grade mapping happens in the transcript service when generating transcripts. Grade values (letter, points) are computed on-the-fly for display purposes.
 
 **Related Collections:**
 - References: `enrollments`, `assessments`, `users`
@@ -443,7 +473,15 @@ The schema is defined using Convex's schema definition system, which provides ty
 **Fields:**
 - `studentId` (Id<"students">) - Foreign key to the graduated student
 - `graduationYear` (number) - Year of graduation
-- `contactInfo` (object) - Contact object containing `email`, `phone`, and `address` (street, city, state, postalCode, country)
+- `contactInfo` (object) - Contact object containing:
+  - `email` (string) - Email address
+  - `phone` (string) - Phone number
+  - `address` (object) - Address object containing:
+    - `street` (string) - Street address
+    - `city` (string) - City name
+    - `state` (string) - State or province
+    - `postalCode` (string) - Postal or ZIP code
+    - `country` (string) - Country name
 - `employmentStatus` (string) - Employment status (e.g., "employed", "seeking", "unknown")
 - `currentEmployer` (optional string) - Current employer
 - `jobTitle` (optional string) - Job title
@@ -453,8 +491,14 @@ The schema is defined using Convex's schema definition system, which provides ty
 - `by_studentId` - Fast lookup by student
 - `by_graduationYear` - Filter and aggregate by graduation year
 
+**Foreign Key Relationships:**
+- `studentId` → `students._id`
+
 **Notes:**
-- Profiles are created automatically when a student's graduation is approved. Administrators and registrars may also create or update profiles. Alumni users may update their own profile information via the UI.
+- Profiles are created automatically when a student's graduation is approved (via processStudentGraduation mutation)
+- Default values on creation: email from user account, empty phone/address, employmentStatus: "unknown"
+- Administrators and registrars may also create or update profiles
+- Alumni users may update their own profile information via the UI
 
 ---
 
@@ -772,10 +816,12 @@ All indexes are automatically maintained by Convex and optimize query performanc
 - Composite indexes on frequently queried field combinations
 
 ### Unique Constraint Indexes
-- `users.by_email` - Ensures email uniqueness
+- `users.by_email` - Ensures email uniqueness (case-insensitive check in validation)
 - `courses.by_code` - Ensures course code uniqueness
 - `students.by_studentNumber` - Ensures student number uniqueness
 - `academicSessions.by_yearLabel` - Ensures session year label uniqueness
+- `enrollments.by_studentId_sectionId` - Ensures unique enrollment (student cannot enroll twice in same section)
+- `grades.by_enrollmentId_assessmentId` - Ensures unique grade per enrollment-assessment pair
 
 ### Query Optimization Indexes
 - Status fields (e.g., `students.by_status`, `enrollments.by_status`)
@@ -798,7 +844,7 @@ The following collections serve as aggregate roots:
 8. **transcripts** - TranscriptAggregate
 9. **graduationRecords** - GraduationAggregate
 
-**Note:** The `programs` collection is not an aggregate root but is referenced by courses and students.
+**Note:** The `programs` collection is not an aggregate root but is referenced by courses. Students now belong directly to departments, not programs.
 
 For detailed information about aggregate boundaries and invariants, see [Aggregate Roots and Invariants](./aggregates_and_invariants.md).
 

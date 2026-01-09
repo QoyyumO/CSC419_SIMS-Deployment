@@ -75,16 +75,19 @@ export async function validateEmailUniqueness(
   email: string,
   excludeId?: Id<"users">
 ): Promise<void> {
+  // Convert email to lowercase for case-insensitive uniqueness check
+  const emailLower = email.toLowerCase().trim();
+  
   const existing = await db
     .query("users")
-    .withIndex("by_email", (q) => q.eq("email", email))
+    .withIndex("by_email", (q) => q.eq("email", emailLower))
     .first();
 
   if (existing && existing._id !== excludeId) {
     throw new InvariantViolationError(
       "UserAggregate",
       "Email Uniqueness",
-      `Email '${email}' is already taken`
+      `Email '${emailLower}' is already taken`
     );
   }
 }

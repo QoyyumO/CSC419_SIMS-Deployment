@@ -89,9 +89,12 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
       errors.lastName = 'Last name is required';
     }
 
+    // Comprehensive email regex pattern
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!emailRegex.test(formData.email.trim())) {
       errors.email = 'Please enter a valid email address';
     }
 
@@ -174,7 +177,7 @@ export default function CreateUser({ isOpen, onClose, onSuccess }: CreateUserPro
           departmentId: Id<'departments'>;
         };
       } = {
-        email: formData.email.trim(),
+        email: formData.email.toLowerCase().trim(),
         password: password,
         roles: [formData.role],
         profile: {

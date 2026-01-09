@@ -33,18 +33,22 @@ export function ForgotPasswordForm() {
     setApiMessage(null);
     setValidationErrors({});
 
+    // Comprehensive email regex pattern
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     if (!email.trim()) {
       setValidationErrors({ email: "Email is required" });
       setIsLoading(false);
       return;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!emailRegex.test(email.trim())) {
       setValidationErrors({ email: "Please enter a valid email address" });
       setIsLoading(false);
       return;
     }
 
     try {
-      const res = await requestReset({ username: email });
+      // Convert email to lowercase for case-insensitive lookup
+      const res = await requestReset({ username: email.toLowerCase().trim() });
       setApiMessage(res?.message ?? "If the account exists, reset instructions were sent.");
     } catch (err) {
       const message =

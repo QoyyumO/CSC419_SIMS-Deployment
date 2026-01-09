@@ -81,9 +81,12 @@ export const getUserByEmail = query({
     email: v.string(),
   },
   handler: async (ctx, args) => {
+    // Convert email to lowercase for case-insensitive lookup
+    const emailLower = args.email.toLowerCase().trim();
+    
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
       .first();
 
     if (!user) {
@@ -262,9 +265,12 @@ export const checkEmailAvailability = query({
     email: v.string(),
   },
   handler: async (ctx, args) => {
+    // Convert email to lowercase for case-insensitive lookup
+    const emailLower = args.email.toLowerCase().trim();
+    
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
       .first();
 
     return {
@@ -369,10 +375,13 @@ export const createUser = mutation({
     })),
   },
   handler: async (ctx, args) => {
+    // Convert email to lowercase for case-insensitive storage
+    const emailLower = args.email.toLowerCase().trim();
+    
     // Check if email already exists
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", emailLower))
       .first();
 
     if (existingUser) {
@@ -388,7 +397,7 @@ export const createUser = mutation({
     // Validate user creation invariants
     await validateCreateUser(
       ctx.db,
-      args.email,
+      emailLower,
       hashedPassword,
       args.roles,
       args.profile
@@ -396,7 +405,7 @@ export const createUser = mutation({
 
     // Create the user
     const userId = await ctx.db.insert("users", {
-      email: args.email,
+      email: emailLower,
       hashedPassword,
       roles: args.roles as UserRole[],
       profile: args.profile,
@@ -484,7 +493,7 @@ export const createUser = mutation({
     return {
       success: true,
       userId,
-      email: args.email,
+      email: emailLower,
       token,
       roles: args.roles as UserRole[],
       profile: args.profile,
