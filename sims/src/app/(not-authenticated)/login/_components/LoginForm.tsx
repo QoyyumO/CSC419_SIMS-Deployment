@@ -114,7 +114,7 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
         <div className="space-y-6">
           {apiError && (
             <div className="mb-6">
-              <Alert variant="error" title="Authentication Error" message="Invalid Credentioals" />
+              <Alert variant="error" title="Authentication Error" message="Invalid Credentials" />
             </div>
           )}
 
