@@ -84,7 +84,7 @@
 - **GitHub:** @ayomidemalik
 - **Responsibilities:**  
   - Assist in creating wireframes and visual assets.  
-  - Conduct usability testing and report findings.  
+  - Recorded design features.  
   - Maintain design documentation in `docs/wireframes/`.
 
 ---
@@ -94,8 +94,8 @@
 - **GitHub:** @HenryOkwudili
 - **Responsibilities:**  
   - Develop overall QA strategy and test plans (unit, integration, e2e).  
-  - Review and approve QA reports from team members.  
-  - Ensure all features meet quality standards before merge.
+  - Verify acceptance criteria.  
+  - Ensure all features meet quality standards.
 
 ### QA / Testing Team Member
 - **Name:** Adesokan Adebare
